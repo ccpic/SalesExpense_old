@@ -100,7 +100,7 @@ def get_chart(request, chart):
     return c.dump_options()
 
 
-def ajax_summary(request, index):
+def ajax_table(request, index):
     df = get_df_clients(request.user, table=False)
 
     df_client_n = pd.pivot_table(df, index=index, values='客户姓名', aggfunc='count')

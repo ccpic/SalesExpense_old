@@ -10,7 +10,7 @@ urlpatterns = [
     path(r'export_clients/', views.export_clients, name='export_clients'), #导出记录
     path(r'analysis', views.analysis, name='analysis'), #分析现有档案
     path(r'ajax_chart/<str:chart>/', views.ChartView.as_view(), name='ajax_chart'), #Ajax出图
-    path(r'ajax_summary/<str:index>/', views.ajax_summary, name='ajax_summary')
+    path(r'ajax_table/<str:index>/', views.ajax_table, name='ajax_table') #Ajax出表
     # path(r'hospitals', views.hospitals, name='hospitals'),
     # path('records/<str:rsp_name>/detail/', views.detail, name='detail'),
     # # ex: /polls/5/results/

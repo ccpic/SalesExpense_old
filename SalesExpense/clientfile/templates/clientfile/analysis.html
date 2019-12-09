@@ -80,7 +80,7 @@ $(document).ready(function() {
     $.ajax({
 
         // 请求的url
-        url: '{% url 'clientfile:ajax_summary' '负责代表' %}',
+        url: '{% url 'clientfile:ajax_table' '负责代表' %}',
         // 请求的type
         type:'POST',
         // 发送的数据
