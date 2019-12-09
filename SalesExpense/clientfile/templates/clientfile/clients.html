@@ -1,0 +1,301 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load staticfiles %}
+{% load tags %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM客户档案管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:60px">
+    <div class="ui hidden divider"></div>
+    <div class="ui container">
+        <h2 class="ui blue dividing header">导入Excel</h2>
+        <a href="{% static 'media/客户档案模板.xlsx' %}">下载客户档案模板</a>
+        <form class="ui form" enctype="multipart/form-data" id="upload-form" method="post"  action="{% url 'clientfile:import_excel' %}">
+            {% csrf_token %}
+            <div class="field">
+                <div class="ui action input">
+                    <input type="text" id="_attachmentName">
+                    <label for="attachmentName" class="ui button btn-file">
+                         <i class="upload icon"></i>选择本地Excel
+                         <input type="file" id="attachmentName" name="attachmentName" style="display: none"
+                                accept="text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" >
+                    </label>
+                </div>
+            </div>
+            <div type="button" id="upload" class="ui blue submit button">
+                同步数据至平台
+            </div>
+        </form>
+        <div class="ui hidden info message" id="msg"></div>
+    </div>
+    <div class="ui hidden divider"></div>
+    <div class="ui container">
+
+        <h2 class="ui blue dividing header">现有档案</h2>
+        <div type="button" class="ui blue submit button" onclick="location.href='{% url 'clientfile:export_clients' %}'">
+            导出客户档案
+        </div>
+        <div class="ui hidden divider"></div>
+        <div class="ui container" id='result_table'
+             style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+
+            {{ table|safe }}
+        </div>
+    </div>
+    <div class="ui modal" id="modal_modify_record">
+        <i class="close icon"></i>
+        <div class="header">
+            修改记录
+        </div>
+        <div class="content">
+            <form class="ui form" id="form_modify_record">
+                <div class="ui fields">
+                    <div class="eight wide field">
+                        <label>医院-代表</label>
+                        <div class="ui disabled fluid search selection dropdown" id="hospital_select_m">
+                            <input type="hidden" name="hospital" id="hospital_m">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">医院-代表</div>
+                            <div class="menu">
+                                {% for hospital in hospital_list %}
+                                <div class="item" data-value={{ hospital.id }}>{{ hospital }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <a href="{% url 'sheets:hospitals' %}">没有找到医院？自定义添加</a>
+                    </div>
+                    <div class="two wide field">
+                        <label>年</label>
+                        <div class="ui disabled fluid search selection dropdown" id="year_select_m">
+                            <input type="hidden" name="year" id="year_m">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">年</div>
+                            <div class="menu">
+                                {% for i in year_range %}
+                                <div class="item" data-value={{ i }}>{{ i }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="two wide field">
+                        <label>月</label>
+                        <div class="ui disabled fluid search selection dropdown" id="month_select_m">
+                            <input type="hidden" name="month" id="month_m">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">月</div>
+                            <div class="menu">
+                                {% for i in month_range %}
+                                <div class="item" data-value={{ i }}>{{ i }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="four wide field">
+                        <label>备注</label>
+                        <input type="text" name="note_text" id="note_text_m" placeholder="备注（可为空）">
+                    </div>
+                </div>
+                <div class="equal width fields">
+                    <div class="field">
+                        <label>医院进货盒数</label>
+                        <input type="text" name="hospital_sales" id="hospital_sales_m" placeholder="医院进货盒数">
+                    </div>
+                    <div class="field">
+                        <label>PMS盒数</label>
+                        <input type="text" name="project1_volume" id="project1_volume_m" placeholder="PMS盒数">
+                    </div>
+                    <div class="field">
+                        <label>TRUE+ACTION盒数</label>
+                        <input type="text" name="project2_volume" id="project2_volume_m" placeholder="TRUE+ACTION盒数">
+                    </div>
+                    <div class="field">
+                        <label>CP实际报销</label>
+                        <input type="text" name="cp_expense" id="cp_expense_m" placeholder="CP实际报销">
+                    </div>
+                    <div class="field">
+                        <label>科室会次数</label>
+                        <input type="text" name="round_table_times" id="round_table_times_m" placeholder="科室会次数">
+                    </div>
+                    <div class="field">
+                        <label>科室会和点评会报销</label>
+                        <input type="text" name="round_table_expense" id="round_table_expense_m"
+                               placeholder="科室会和点评会报销">
+                    </div>
+                </div>
+
+                <div class="ui error message" id="error_message_m"></div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui black deny button">
+                取消
+            </div>
+            <div class="ui positive right labeled icon button">
+                确认修改
+                <i class="checkmark icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="ui modal" id="modal_delete_record">
+        <i class="close icon"></i>
+        <div class="header">
+            警告
+        </div>
+        <div class="content">
+            您确认删除该条记录吗？
+        </div>
+        <div class="actions">
+            <div class="ui black deny button">
+                取消
+            </div>
+            <div class="ui positive right labeled icon button">
+                确认删除
+                <i class="checkmark icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="ui modal" id="modal_add_record_warning">
+        <i class="close icon"></i>
+        <div class="header">
+            拒绝
+        </div>
+        <div class="content">
+            添加失败，当前日期已存在相同的医院-代表数据，如需修改请点击相应记录左侧按钮
+        </div>
+        <div class="actions">
+            <div class="ui negative right labeled icon button">
+                知道了
+                <i class="checkmark icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="ui modal" id="modal_add_record_success">
+        <i class="close icon"></i>
+        <div class="header">
+            成功
+        </div>
+        <div class="content">
+            添加记录成功
+        </div>
+        <div class="actions">
+            <div class="ui positive right labeled icon button">
+                知道了
+                <i class="checkmark icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+$(document).ready(function () {
+    $.ajaxSetup({
+        data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+    });
+});
+
+</script>
+
+<script>
+    $(document).ready(function () {
+        $('#table').DataTable({
+            pageLength: 25,
+            autoWidth: false,
+            language: {
+                search: "在档案中搜索:",
+                sLengthMenu: "每页显示 _MENU_ 条档案"
+            }
+        });
+    });
+
+</script>
+
+<script>
+$("#upload").click(function(){
+    var formdata = new FormData(document.getElementById("upload-form"));
+    $("#msg").attr("class", "ui visible info message");
+    $("#msg").html("数据上传中……");
+    $.ajax({
+        url: '{% url 'clientfile:import_excel' %}',
+        type: "post",
+        data: formdata,
+        contentType: false, //- 必须false才会自动加上正确的Content-Type
+        processData: false, //- 必须false才会避开jQuery对 formdata 的默认处理,XMLHttpRequest会对 formdata 进行正确的处理
+        success: function(ret){
+            if (ret.code === 1) {
+                $("#msg").attr("class", "ui positive message");
+                $("#msg").html(ret.msg);
+                $("#result_table").html(ret.data);
+                $('#table').DataTable({
+                    pageLength: 25,
+                    autoWidth: false,
+                    language: {
+                        search: "在档案中搜索:",
+                        sLengthMenu: "每页显示 _MENU_ 条档案"
+                    }
+                });
+            } else {
+                $("#msg").attr("class", "ui negative message");
+                $("#msg").html(ret.msg);
+            }
+        },
+        error: function(){
+            $("#msg").attr("class", "ui negative message");
+            $("#msg").html("上传失败，有错误发生");
+        }
+    });
+});
+</script>
+
+<script>
+var fileExtentionRange = '.csv .xls .xlsx';
+var MAX_SIZE = 30; // MB
+
+$(document).on('change', '.btn-file :file', function() {
+    var input = $(this);
+
+    if (navigator.appVersion.indexOf("MSIE") != -1) { // IE
+        var label = input.val();
+
+        input.trigger('fileselect', [ 1, label, 0 ]);
+    } else {
+        var label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+        var numFiles = input.get(0).files ? input.get(0).files.length : 1;
+        var size = input.get(0).files[0].size;
+
+        input.trigger('fileselect', [ numFiles, label, size ]);
+    }
+});
+
+$('.btn-file :file').on('fileselect', function(event, numFiles, label, size) {
+    $('#attachmentName').attr('name', 'attachmentName'); // allow upload.
+
+    var postfix = label.substr(label.lastIndexOf('.'));
+    if (fileExtentionRange.indexOf(postfix.toLowerCase()) > -1) {
+        if (size > 1024 * 1024 * MAX_SIZE ) {
+            alert('max size：<strong>' + MAX_SIZE + '</strong> MB.');
+
+            $('#attachmentName').removeAttr('name'); // cancel upload file.
+        } else {
+            $('#_attachmentName').val(label);
+        }
+    } else {
+        alert('file type：<br/> <strong>' + fileExtentionRange + '</strong>');
+
+        $('#attachmentName').removeAttr('name'); // cancel upload file.
+    }
+});
+</script>
+
+{% endblock index %}

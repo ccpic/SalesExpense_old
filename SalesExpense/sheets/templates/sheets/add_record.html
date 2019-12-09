@@ -1,0 +1,84 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load staticfiles %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM医院费用管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:120px">
+    <div class="ui container">
+        <form class="ui form" method="post" action="{% url 'sheets:add_record' %}">
+            {% csrf_token %}
+            <h4 class="ui dividing header">添加新记录</h4>
+            <div class="field">
+                <label>医院-代表</label>
+                <select name="hospital-select" id="hospital-select"
+                        class="ui fluid search selection dropdown">
+                    <option value="">医院-代表</option>
+                    {% for hospital in hospital_list %}
+                    <option value="{{ hospital.id }}">{{ hospital }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="fields">
+                <div class="field">
+                    <label>年</label>
+                    <select name="year-select" id="year-select"
+                            class="ui fluid search selection dropdown">
+                        <option value="">年</option>
+                        {% for i in year_range %}
+                        <option value={{ i }}>{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>月</label>
+                    <select name="month-select" id="month-select"
+                            class="ui fluid search selection dropdown">
+                        <option value="">月</option>
+                        {% for i in month_range %}
+                        <option value={{ i }}>{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="equal width fields">
+                <div class="field">
+                    <label>PMS盒数</label>
+                    <input type="text" name="project1_volume" placeholder="PMS盒数">
+                </div>
+                <div class="field">
+                    <label>TRUE盒数</label>
+                    <input type="text" name="project2_volume" placeholder="TRUE盒数">
+                </div>
+            </div>
+            <div class="field">
+                <label>备注</label>
+                <input type="text" name="note_text" placeholder="备注">
+            </div>
+            <button class="ui blue button" type="submit">提交</button>
+        </form>
+
+        {% if success_msg %}
+            <div class="ui info message">
+                {{ success_msg }}
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    $('.ui.fluid.search.selection.dropdown')
+      .dropdown({ fullTextSearch: true });
+</script>
+
+{% endblock index %}

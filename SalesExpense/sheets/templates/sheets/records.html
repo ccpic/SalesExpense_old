@@ -1,0 +1,693 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load staticfiles %}
+{% load tags %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM医院费用管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:60px">
+    <div class="ui container">
+        <form class="ui form" id="form_add_record" method="post" action="{% url 'sheets:ajax_add_record' %}" onsubmit="return false;">
+            {% csrf_token %}
+            <h2 class="ui blue dividing header">添加新记录</h2>
+            <div class="fields">
+                <div class="eight wide field">
+                    <label>医院-代表</label>
+                    <div class="ui fluid search selection dropdown">
+                        <input type="hidden" name="hospital" id="hospital">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">医院-代表</div>
+                        <div class="menu">
+                            {% for hospital in hospital_list %}
+                            <div class="item" data-value={{ hospital.id }}>{{ hospital }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <a href="{% url 'sheets:hospitals' %}">没有找到医院？自定义添加</a>
+                </div>
+
+                <div class="two wide field">
+                    <label>年</label>
+                    <div class="ui fluid search selection dropdown">
+                        <input type="hidden" name="year" id="year">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">年</div>
+                        <div class="menu">
+                            {% for i in year_range %}
+                            <div class="item" data-value={{ i }}>{{ i }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="two wide field">
+                    <label>月</label>
+                    <div class="ui fluid search selection dropdown">
+                        <input type="hidden" name="month" id="month">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">月</div>
+                        <div class="menu">
+                            {% for i in month_range %}
+                            <div class="item" data-value={{ i }}>{{ i }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="four wide field">
+                    <label>备注</label>
+                    <input type="text" name="note_text" id="note_text" placeholder="备注（可为空）">
+                </div>
+            </div>
+            <div class="equal width fields">
+                <div class="field">
+                    <label>医院进货盒数</label>
+                    <input type="text" name="hospital_sales" id="hospital_sales" placeholder="医院进货盒数">
+                </div>
+                <div class="field">
+                    <label>PMS盒数</label>
+                    <input type="text" name="project1_volume" id="project1_volume" placeholder="PMS盒数">
+                </div>
+                <div class="field">
+                    <label>TRUE+ACTION盒数</label>
+                    <input type="text" name="project2_volume" id="project2_volume" placeholder="TRUE+ACTION盒数">
+                </div>
+                <div class="field">
+                    <label>CP实际报销</label>
+                    <input type="text" name="cp_expense" id="cp_expense" placeholder="CP实际报销">
+                </div>
+                <div class="field">
+                    <label>科室会次数</label>
+                    <input type="text" name="round_table_times" id="round_table_times" placeholder="科室会次数">
+                </div>
+                <div class="field">
+                    <label>科室会和点评会报销</label>
+                    <input type="text" name="round_table_expense" id="round_table_expense" placeholder="科室会和点评会报销">
+                </div>
+            </div>
+
+            <div type="button" class="ui blue submit button" id="ajax_add_record">提交</div>
+            <div class="ui error message"></div>
+        </form>
+
+        {% if success_msg %}
+        <div class="ui info message">
+            {{ success_msg }}
+        </div>
+        {% endif %}
+
+    </div>
+    <div class="ui hidden divider"></div>
+
+    <div class="ui container">
+
+        <h2 class="ui blue dividing header">现有记录</h2>
+        <div type="button" class="ui blue submit button" onclick="location.href='{% url 'sheets:export_record' %}'">
+            导出记录
+        </div>
+        <div class="ui hidden divider"></div>
+        <div class="ui container" id='result_table'
+             style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+
+            {{ table|safe }}
+        </div>
+    </div>
+    <div class="ui modal" id="modal_modify_record">
+        <i class="close icon"></i>
+        <div class="header">
+            修改记录
+        </div>
+        <div class="content">
+            <form class="ui form" id="form_modify_record">
+                <div class="ui fields">
+                    <div class="eight wide field">
+                        <label>医院-代表</label>
+                        <div class="ui disabled fluid search selection dropdown" id="hospital_select_m">
+                            <input type="hidden" name="hospital" id="hospital_m">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">医院-代表</div>
+                            <div class="menu">
+                                {% for hospital in hospital_list %}
+                                <div class="item" data-value={{ hospital.id }}>{{ hospital }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <a href="{% url 'sheets:hospitals' %}">没有找到医院？自定义添加</a>
+                    </div>
+                    <div class="two wide field">
+                        <label>年</label>
+                        <div class="ui disabled fluid search selection dropdown" id="year_select_m">
+                            <input type="hidden" name="year" id="year_m">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">年</div>
+                            <div class="menu">
+                                {% for i in year_range %}
+                                <div class="item" data-value={{ i }}>{{ i }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="two wide field">
+                        <label>月</label>
+                        <div class="ui disabled fluid search selection dropdown" id="month_select_m">
+                            <input type="hidden" name="month" id="month_m">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">月</div>
+                            <div class="menu">
+                                {% for i in month_range %}
+                                <div class="item" data-value={{ i }}>{{ i }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="four wide field">
+                        <label>备注</label>
+                        <input type="text" name="note_text" id="note_text_m" placeholder="备注（可为空）">
+                    </div>
+                </div>
+                <div class="equal width fields">
+                    <div class="field">
+                        <label>医院进货盒数</label>
+                        <input type="text" name="hospital_sales" id="hospital_sales_m" placeholder="医院进货盒数">
+                    </div>
+                    <div class="field">
+                        <label>PMS盒数</label>
+                        <input type="text" name="project1_volume" id="project1_volume_m" placeholder="PMS盒数">
+                    </div>
+                    <div class="field">
+                        <label>TRUE+ACTION盒数</label>
+                        <input type="text" name="project2_volume" id="project2_volume_m" placeholder="TRUE+ACTION盒数">
+                    </div>
+                    <div class="field">
+                        <label>CP实际报销</label>
+                        <input type="text" name="cp_expense" id="cp_expense_m" placeholder="CP实际报销">
+                    </div>
+                    <div class="field">
+                        <label>科室会次数</label>
+                        <input type="text" name="round_table_times" id="round_table_times_m" placeholder="科室会次数">
+                    </div>
+                    <div class="field">
+                        <label>科室会和点评会报销</label>
+                        <input type="text" name="round_table_expense" id="round_table_expense_m"
+                               placeholder="科室会和点评会报销">
+                    </div>
+                </div>
+
+                <div class="ui error message" id="error_message_m"></div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui black deny button">
+                取消
+            </div>
+            <div class="ui positive right labeled icon button">
+                确认修改
+                <i class="checkmark icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="ui modal" id="modal_delete_record">
+        <i class="close icon"></i>
+        <div class="header">
+            警告
+        </div>
+        <div class="content">
+            您确认删除该条记录吗？
+        </div>
+        <div class="actions">
+            <div class="ui black deny button">
+                取消
+            </div>
+            <div class="ui positive right labeled icon button">
+                确认删除
+                <i class="checkmark icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="ui modal" id="modal_add_record_warning">
+        <i class="close icon"></i>
+        <div class="header">
+            拒绝
+        </div>
+        <div class="content">
+            添加失败，当前日期已存在相同的医院-代表数据，如需修改请点击相应记录左侧按钮
+        </div>
+        <div class="actions">
+            <div class="ui negative right labeled icon button">
+                知道了
+                <i class="checkmark icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="ui modal" id="modal_add_record_success">
+        <i class="close icon"></i>
+        <div class="header">
+            成功
+        </div>
+        <div class="content">
+            添加记录成功
+        </div>
+        <div class="actions">
+            <div class="ui positive right labeled icon button">
+                知道了
+                <i class="checkmark icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    // 请求服务器，返回JSON
+    $(document).ready(function () {
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        $("#ajax_add_record").click(function () {
+            var validated = $('#form_add_record').form('validate form');
+            if(!validated){
+                return false;
+            }
+            // 获取下拉框的值
+            var hospital_id = $("#hospital").val();
+            var year = $("#year").val();
+            var month = $("#month").val();
+            var note_text = $("#note_text").val();
+            var hospital_sales = $("#hospital_sales").val();
+            var project1_volume = $("#project1_volume").val();
+            var project2_volume = $("#project2_volume").val();
+            var cp_expense = $("#cp_expense").val();
+            var round_table_times = $("#round_table_times").val();
+            var round_table_expense = $("#round_table_expense").val();
+
+            // 打包成get请求发送的数据
+            var data = {
+                "hospital_id": hospital_id,
+                "year": year,
+                "month": month,
+                "note_text": note_text,
+                "hospital_sales": hospital_sales,
+                "project1_volume": project1_volume,
+                "project2_volume": project2_volume,
+                "cp_expense": cp_expense,
+                "round_table_times": round_table_times,
+                "round_table_expense": round_table_expense,
+            };
+            $.ajax({
+                // 请求的url
+                url: '{% url 'sheets:ajax_add_record' %}',
+                // 请求的type
+                type: 'POST',
+                // 发送的数据
+                data: data,
+                // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                success: function (ret) {     //成功执行
+                    // 把查询结果输出到网页上
+                    if (ret == "existed") {
+                        $('#modal_add_record_warning')
+                        .modal("setting", {
+                            closable: false
+                        }).modal("show");
+                    } else {
+                        $('#modal_add_record_success')
+                        .modal("setting", {
+                            closable: false,
+                            onApprove: function () {
+                                $("#result_table").html(ret);
+                                $('#table').DataTable({
+                                    pageLength: 25,
+                                    autoWidth: false,
+                                });
+                            }
+                        }).modal("show");
+
+                    }
+                }
+            });
+        });
+    });
+
+
+</script>
+
+<script>
+    $(document).ready(function () {
+        $('#table').DataTable({
+            pageLength: 25,
+            autoWidth: false,
+
+        });
+    });
+
+</script>
+
+
+<script>
+    function delete_record(id) {
+        $('#modal_delete_record')
+            .modal("setting", {
+                closable: false,
+                onApprove: function () {
+                    var data = {
+                        "id": id
+                    };
+                    $.ajax({
+                        // 请求的url
+                        url: '{% url 'sheets:ajax_delete_record' %}',
+                        // 请求的type
+                        type: 'POST',
+                        // 发送的数据
+                        data: data,
+                        // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                        success: function (ret) {     //成功执行
+                            // 把查询结果输出到网页上
+                            $("#result_table").html(ret);
+                            $('#table').DataTable({
+                                pageLength: 25,
+                                autoWidth: false,
+                            });
+                        }
+                    });
+                }
+            }).modal("show");
+    }
+</script>
+
+
+<script>
+    function modify_record(id) {
+        var data = {
+            "id": id
+        };
+        $.ajax({
+            // 请求的url
+            url: '{% url 'sheets:ajax_get_record' %}',
+            // 请求的type
+            type: 'POST',
+            // 发送的数据
+            data: data,
+            dataType: 'json',
+            // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+            success: function (ret) {     //成功执行
+                $("#form_modify_record").trigger("reset");
+                $('#form_modify_record .field.error').removeClass( "error" );
+                $('#form_modify_record.error').removeClass( "error" );
+
+                var record = eval("(" + ret + ")")[0].fields;
+                $("#hospital_select_m").dropdown('set selected', record.hospital);
+                var datetime = new Date(record.record_date);
+                var year = datetime.getFullYear();
+                var month = datetime.getMonth() + 1;
+                $("#year_select_m").dropdown('set selected', year);
+                $("#month_select_m").dropdown('set selected', month);
+                $("#note_text_m").attr('value', record.note_text);
+                $("#hospital_sales_m").attr('value', record.hospital_sales);
+                $("#project1_volume_m").attr('value', record.project1_volume);
+                $("#project2_volume_m").attr('value', record.project2_volume);
+                $("#cp_expense_m").attr('value', record.cp_expense);
+                $("#round_table_times_m").attr('value', record.round_table_times);
+                $("#round_table_expense_m").attr('value', record.round_table_expense);
+            }
+        });
+
+
+        $('#modal_modify_record')
+            .modal("setting", {
+                autofocus: false,
+                closable: false,
+                onApprove: function () {
+                    var validated = $('#form_modify_record').form('validate form');
+                    if(!validated){
+                        return false;
+                    }
+                    var hospital_id = $("#hospital_m").val();
+                    var year = $("#year_m").val();
+                    var month = $("#month_m").val();
+                    var note_text = $("#note_text_m").val();
+                    var hospital_sales = $("#hospital_sales_m").val();
+                    var project1_volume = $("#project1_volume_m").val();
+                    var project2_volume = $("#project2_volume_m").val();
+                    var cp_expense = $("#cp_expense_m").val();
+                    var round_table_times = $("#round_table_times_m").val();
+                    var round_table_expense = $("#round_table_expense_m").val();
+
+                    // 打包成get请求发送的数据
+                    var data = {
+                        "record_id": id,
+                        "hospital_id": hospital_id,
+                        "year": year,
+                        "month": month,
+                        "note_text": note_text,
+                        "hospital_sales": hospital_sales,
+                        "project1_volume": project1_volume,
+                        "project2_volume": project2_volume,
+                        "cp_expense": cp_expense,
+                        "round_table_times": round_table_times,
+                        "round_table_expense": round_table_expense,
+                    };
+                    $.ajax({
+                        // 请求的url
+                        url: '{% url 'sheets:ajax_modify_record' %}',
+                        // 请求的type
+                        type: 'POST',
+                        // 发送的数据
+                        data: data,
+                        // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                        success: function (ret) {     //成功执行
+                            // 把查询结果输出到网页上
+                            $("#result_table").html(ret);
+                            $('#table').DataTable({
+                                pageLength: 25,
+                                autoWidth: false,
+                            });
+                        }
+                    });
+                }
+            }).modal("show");
+    }
+</script>
+
+<script>
+    $('.ui.fluid.search.selection.dropdown')
+        .dropdown({fullTextSearch: true});
+
+
+</script>
+
+<script>
+    $('#form_add_record')
+        .form({
+            fields: {
+                hospital: {
+                    identifier: 'hospital',
+                    rules: [
+                        {
+                            type: 'empty',
+                            prompt: '医院-代表不能为空'
+                        }
+                    ]
+                },
+            }
+        })
+    ;
+
+    $('#form_add_record').form('add field', "year", {
+        rules: [
+            {
+                type: 'empty',
+                prompt: '年不能为空'
+            }
+        ]
+    });
+
+    $('#form_add_record').form('add field', "month", {
+        rules: [
+            {
+                type: 'empty',
+                prompt: '月不能为空'
+            }
+        ]
+    });
+
+    $('#form_add_record').form('add field', "hospital_sales", {
+        rules: [
+            {
+                type: 'empty',
+                prompt: '进货盒数不能为空'
+            },
+            {
+                type: 'integer',
+                prompt: '进货盒数必须为整数'
+            }
+        ]
+    });
+
+    $('#form_add_record').form('add field', "project1_volume", {
+        rules: [
+            {
+                type: 'integer',
+                prompt: 'PMS盒数必须为整数'
+            }
+        ]
+    });
+
+    $('#form_add_record').form('add field', "project2_volume", {
+        rules: [
+            {
+                type: 'integer',
+                prompt: 'TRUE+ACTION盒数必须为整数'
+            }
+        ]
+    });
+
+    $('#form_add_record').form('add field', "cp_expense", {
+        rules: [
+            {
+                type: 'empty',
+                prompt: 'CP报销不能为空'
+            },
+            {
+                type: 'integer',
+                prompt: 'CP报销必须为整数'
+            }
+        ]
+    });
+
+    $('#form_add_record').form('add field', "round_table_times", {
+        rules: [
+            {
+                type: 'integer',
+                prompt: '科室会次数必须为整数'
+            }
+        ]
+    });
+
+    $('.ui.form').form('add field', "round_table_expense", {
+        rules: [
+            {
+                type: 'integer',
+                prompt: '科室会报销必须为整数'
+            }
+        ]
+    });
+
+
+</script>
+<script>
+    $('#form_modify_record')
+        .form({
+            fields: {
+                hospital: {
+                    identifier: 'hospital_m',
+                    rules: [
+                        {
+                            type: 'empty',
+                            prompt: '医院-代表不能为空'
+                        }
+                    ]
+                },
+            }
+        })
+    ;
+
+    $('#form_modify_record').form('add field', "year_m", {
+        rules: [
+            {
+                type: 'empty',
+                prompt: '年不能为空'
+            }
+        ]
+    });
+
+    $('#form_modify_record').form('add field', "month_m", {
+        rules: [
+            {
+                type: 'empty',
+                prompt: '月不能为空'
+            }
+        ]
+    });
+
+    $('#form_modify_record').form('add field', "hospital_sales_m", {
+        rules: [
+            {
+                type: 'empty',
+                prompt: '进货盒数不能为空'
+            },
+            {
+                type: 'integer',
+                prompt: '进货盒数必须为整数'
+            }
+        ]
+    });
+
+    $('#form_modify_record').form('add field', "project1_volume_m", {
+        rules: [
+            {
+                type: 'integer',
+                prompt: 'PMS盒数必须为整数'
+            }
+        ]
+    });
+
+    $('#form_modify_record').form('add field', "project2_volume_m", {
+        rules: [
+            {
+                type: 'integer',
+                prompt: 'TRUE+ACTION盒数必须为整数'
+            }
+        ]
+    });
+
+    $('#form_modify_record').form('add field', "cp_expense_m", {
+        rules: [
+            {
+                type: 'empty',
+                prompt: 'CP报销不能为空'
+            },
+            {
+                type: 'integer',
+                prompt: 'CP报销必须为整数'
+            }
+        ]
+    });
+
+    $('#form_modify_record').form('add field', "round_table_times_m", {
+        rules: [
+            {
+                type: 'integer',
+                prompt: '科室会次数必须为整数'
+            }
+        ]
+    });
+
+    $('#form_modify_record').form('add field', "round_table_expense_m", {
+        rules: [
+            {
+                type: 'integer',
+                prompt: '科室会报销必须为整数'
+            }
+        ]
+    });
+
+
+</script>
+<!--<script>-->
+<!--$("#add_record").click(function() {-->
+<!--$('.large.modal')-->
+<!--.modal('show')-->
+<!--;-->
+<!--});-->
+
+<!--</script>-->
+
+{% endblock index %}

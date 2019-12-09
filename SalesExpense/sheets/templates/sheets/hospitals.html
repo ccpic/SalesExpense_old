@@ -1,0 +1,221 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load staticfiles %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM医院费用管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:60px">
+    <div class="ui container">
+        <form class="ui form" method="post" action="{% url 'sheets:ajax_add_record' %}" onsubmit="return false;">
+            {% csrf_token %}
+            <h2 class="ui blue dividing header">添加新医院-代表</h2>
+            <div class="fields">
+                <div class="four wide field">
+                    <label>信立泰医院编码</label>
+                    <input type="text" name="xltid" id="xltid" placeholder="信立泰医院编码(H开头10位)">
+                </div>
+                <div class="six wide field">
+                    <label>医院名称</label>
+                    <input type="text" name="hospital_name" id="hospital_name" placeholder="医院名称">
+                </div>
+                <div class="three wide field">
+                    <label>负责代表</label>
+                    <input type="text" name="rsp" id="rsp" placeholder="负责代表">
+                </div>
+                <div class="three wide field">
+                    <label>所属地区经理</label>
+                    <div class="ui fluid search selection dropdown">
+                        <input type="hidden" name="dsm" id="dsm">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">所属地区经理</div>
+                        <div class="menu">
+                            {% for dsm in dsm_list %}
+                            <div class="item" data-value={{ dsm.id }}>{{ dsm }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div type="button" class="ui blue submit button" id="ajax_add_record">提交</div>
+            <div class="ui error message"></div>
+        </form>
+
+        {% if success_msg %}
+        <div class="ui info message">
+            {{ success_msg }}
+        </div>
+        {% endif %}
+
+    </div>
+    <div class="ui hidden divider"></div>
+
+    <div class="ui container">
+        <h2 class="ui blue dividing header">现有医院-代表</h2>
+        <div class="ui hidden divider"></div>
+        <div class="ui container" id='result_table'
+             style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+
+            {{ table|safe }}
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+// 请求服务器，返回JSON
+$(document).ready(function(){
+    $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+    });
+});
+
+
+
+
+</script>
+
+<script>
+$(document).ready(function (){
+    $('#table').DataTable({
+        pageLength: 25,
+        autoWidth: false,
+    });
+});
+
+
+
+</script>
+
+
+<script>
+function delete_hospital(id) {
+    if (window.confirm("您确认删除该条记录吗？")) {
+        var data = {
+            "id": id
+        };
+        $.ajax({
+                // 请求的url
+                url: '{% url 'sheets:ajax_delete_hospital' %}',
+                // 请求的type
+                type:'POST',
+                // 发送的数据
+                data: data,
+                // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                success:function(ret){     //成功执行
+                    // 把查询结果输出到网页上
+                    $("#result_table").html(ret);
+                    $('#table').DataTable({
+                        pageLength: 25,
+                        autoWidth: false,
+                    });
+				}
+        });
+    } else {
+        alert("删除失败");
+    }
+}
+
+</script>
+
+
+<script>
+$('.ui.fluid.search.selection.dropdown')
+  .dropdown({ fullTextSearch: true });
+
+
+
+
+</script>
+
+<script>
+$(".ui.form").form(
+    {
+        xltid: {
+            identifier: 'xltid',
+            rules: [
+                {
+                    type: 'empty',
+                    prompt: '信立泰医院编码不能为空'
+                }]
+        },
+        hospital_name: {
+            identifier: 'hospital_name',
+            rules: [
+                {
+                    type: 'empty',
+                    prompt: '医院名称不能为空'
+                }]
+        },
+        rsp: {
+            identifier: 'rsp',
+            rules: [
+                {
+                    type: 'empty',
+                    prompt: '负责代表不能为空'
+                }]
+        },
+        dsm: {
+            identifier: 'dsm',
+            rules: [
+                {
+                    type: 'empty',
+                    prompt: '所属地区经理不能为空'
+                }]
+        }
+    }, {
+        onSuccess: function () {
+            // 获取下拉框的值
+            var xltid = $("#xltid").val();
+            var name = $("#hospital_name").val();
+            var rsp = $("#rsp").val();
+            var dsm = $("#dsm").val();
+
+            // 打包成get请求发送的数据
+            var data = {"xltid": xltid,
+                        "name": name,
+                        "rsp": rsp,
+                        "dsm": dsm,
+            };
+            $.ajax({
+                    // 请求的url
+                    url: '{% url 'sheets:ajax_add_hospital' %}',
+                    // 请求的type
+                    type:'POST',
+                    // 发送的数据
+                    data: data,
+                    // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                    success:function(ret){     //成功执行
+                        // 把查询结果输出到网页上
+                        $("#result_table").html(ret);
+                        $('#table').DataTable({
+                            pageLength: 25,
+                            autoWidth: false,
+                        });
+                    }
+            });
+        }
+    }
+    );
+</script>
+<!--<script>-->
+<!--$("#add_record").click(function() {-->
+<!--$('.large.modal')-->
+<!--.modal('show')-->
+<!--;-->
+<!--});-->
+
+<!--</script>-->
+
+{% endblock index %}

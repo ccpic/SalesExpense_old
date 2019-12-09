@@ -1,0 +1,64 @@
+{% load staticfiles %}
+
+<div class="ui large top fixed inverted menu">
+    <div class="ui container">
+        <a href="#" class="header item">
+            <img class="logo" src="{% static 'assets/images/logo.png' %}">
+            DSM数据管理
+        </a>
+         <div class="ui simple dropdown item">
+            客户档案管理 <i class="dropdown icon"></i>
+             <div class="menu">
+                <a href={% url 'clientfile:clients' %} class="item">档案管理</a>
+                <a href={% url 'clientfile:analysis' %} class="item">档案分析</a>
+             </div>
+         </div>
+         <div class="ui simple dropdown item">
+            费用管理 <i class="dropdown icon"></i>
+            <div class="menu">
+                <a href={% url 'sheets:records' %} class="item">费用记录</a>
+                <a href={% url 'sheets:hospitals' %} class="item">医院-代表</a>
+            </div>
+        </div>
+        {%  if request.user.is_staff  %}
+        <a href={% url 'admin:index' %} class="item">后台管理</a>
+        {% endif %}
+    </div>
+    <div class="right menu">
+        {%  if not request.user.username  %}
+            <div class="ui item">
+                未登录
+            </div>
+        {% else %}
+            <div class="ui item">
+                您好，{{ request.user.username }}
+            </div>
+            <a class="ui item" href="{% url 'logout' %}">
+                切换用户
+            </a>
+        {% endif %}
+  </div>
+</div>
+
+<script>
+$('.ui.fluid.search.dropdown')
+.dropdown();
+$('#db_table-select').val('{{ request.session.db_table }}');
+
+
+
+</script>
+<script>
+function submitForm(){
+//获取form表单对象
+var form = document.getElementById("myform");
+form.submit();//form表单提交
+
+}
+
+
+
+</script>
+
+
+

@@ -1,0 +1,126 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load staticfiles %}
+{% load tags %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM客户档案管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:60px">
+    <div class="ui hidden divider"></div>
+    <div class="ui container">
+        <h2 class="ui blue dividing header">现有档案分析</h2>
+        <div class="ui hidden divider"></div>
+        <div class="ui pointing secondary menu">
+            <a class="item active" data-tab="client"><i class="user md icon"></i>客户分析</a>
+            <a class="item" data-tab="management_dsm"><i class="paperclip icon"></i>管理分析-地区经理</a>
+            <a class="item" data-tab="management_rsp"><i class="paperclip icon"></i>管理分析-代表</a>
+        </div>
+        <div class="ui tab segment active" data-tab="client">
+            <h3 class="ui header">
+                <div class="content">
+                    客户分层
+                    <div class="sub header">潜力 versus 支持度</div>
+                </div>
+            </h3>
+            <div class="ui divider"></div>
+            <div class="ui container">
+                <div id="scatter_client" style="width:1024px; height:600px;"></div>
+            </div>
+        </div>
+        <div class="ui tab segment" data-tab="management_dsm">
+            <h3 class="ui header">
+                <div class="content">
+                    地区经理
+                    <div class="sub header">档案数</div>
+                </div>
+            </h3>
+            <div class="ui divider"></div>
+            <div class="ui container">
+                <div id="bar_dsm" style="width:1024px; height:600px;"></div>
+            </div>
+        </div>
+        <div class="ui tab segment" data-tab="management_rsp">
+            <h3 class="ui header">
+                <div class="content">
+                    代表
+                    <div class="sub header">档案分析</div>
+                </div>
+            </h3>
+            <div class="ui divider"></div>
+            <div class="ui container" id='rsp_summary' style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+    $.ajaxSetup({
+        data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+    });
+
+    $(
+        function () {
+            getData('scatter_client', '{% url 'clientfile:ajax_chart' 'scatter_client' %}');
+            getData('bar_dsm', '{% url 'clientfile:ajax_chart' 'bar_dsm' %}');
+        }
+    );
+    $.ajax({
+
+        // 请求的url
+        url: '{% url 'clientfile:ajax_summary' '负责代表' %}',
+        // 请求的type
+        type:'POST',
+        // 发送的数据
+        // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+        success:function(ret){     //成功执行
+            // 把查询结果输出到网页上
+            $("#rsp_summary").html(ret);
+            $('#table_rsp').DataTable(
+                {
+                order: [[ 1, "desc" ]],
+                pageLength: 25,
+                autoWidth: false
+                });
+        },
+        error:function(){            //失败
+            console.log('失败')
+        }
+    });
+    function getData(chart_id, ajax_url) {
+
+        var chart = echarts.init(document.getElementById(chart_id), 'white', {renderer: 'canvas'});
+
+        chart.showLoading({
+            text: '正在加载数据'
+        });  //增加提示
+        $.ajax({
+            type: "GET",
+            url: ajax_url,
+            dataType: 'json',
+            success: function (ret) {
+                chart.clear();
+                chart.setOption(ret.data);
+                chart.hideLoading();
+            }
+        });
+    }
+});
+
+</script>
+<script>
+    $('.pointing.secondary.menu .item').tab();
+</script>
+{% endblock index %}
