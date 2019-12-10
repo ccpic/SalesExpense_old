@@ -47,6 +47,8 @@ DEPT_CHOICES = [
     ('老干科', '老干科'),
     ('其他科室', '其他科室')
 ]
+
+
 class Client(models.Model):
     rd = models.CharField(max_length=10, verbose_name='所属区域')
     rm = models.CharField(max_length=10, verbose_name='所属大区')
@@ -76,3 +78,24 @@ class Client(models.Model):
 
     def __str__(self):
         return "%s %s %s %s %s %s %s" % (self.rd, self.rm, self.dsm, self.rsp, self.hospital, self.dept, self.name)
+
+    def monthly_patients(self):
+        return round(self.consulting_times * self.patients_half_day * self.target_prop / 100, 0)
+
+    def potential_level(self):
+        if self.monthly_patients() < 83:
+            return 1
+        elif self.monthly_patients() < 205:
+            return 2
+        else:
+            return 3
+
+    def favor_level(self):
+        if self.monthly_prescription <= 20:
+            return 1
+        elif self.monthly_prescription <= 100:
+            return 2
+        elif self.monthly_prescription <= 300:
+            return 3
+        else:
+            return 4

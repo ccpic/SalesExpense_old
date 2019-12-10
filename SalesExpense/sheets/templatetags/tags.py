@@ -20,3 +20,16 @@ def get_record(Record, pk):
 @register.filter(name='has_group')
 def has_group(user, group_name):
     return user.groups.filter(name=group_name).exists()
+
+
+@register.filter
+def multiply(value, arg):
+    '''
+    Divides the value; argument is the divisor.
+    Returns empty string on any error.
+    '''
+    try:
+        if arg:
+            return value * arg
+    except: pass
+    return ''

@@ -232,7 +232,12 @@ def import_excel(request):
 
 @login_required()
 def analysis(request):
-    return render(request, 'clientfile/analysis.html')
+    clients = sorted (Client.objects.order_by('monthly_prescription'), key=lambda p: p.monthly_patients(), reverse=True)
+    context = {
+        'client_list': clients
+    }
+    print(context)
+    return render(request, 'clientfile/analysis.html', context)
 
 
 def validate(df):
