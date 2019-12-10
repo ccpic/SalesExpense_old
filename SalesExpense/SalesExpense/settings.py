@@ -52,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 ]
 
 ROOT_URLCONF = 'SalesExpense.urls'
@@ -128,11 +129,11 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
-# STATICFILES_DIRS = (
-#     os.path.join(BASE_DIR, 'static'),
-# )
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
 
-STATIC_ROOT = os.path.join(BASE_DIR + "/static")
+# STATIC_ROOT = os.path.join(BASE_DIR + "/static")
 LOGIN_REDIRECT_URL = '/clientfile/clients'
 LOGOUT_REDIRECT_URL = '/accounts/login'
 

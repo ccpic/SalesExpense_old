@@ -11,7 +11,9 @@ import numpy as np
 import datetime
 from .charts import *
 import json
-from random import randrange
+from pandas_schema import Column, Schema
+from pandas_schema.validation import LeadingWhitespaceValidation, TrailingWhitespaceValidation, CanConvertValidation, \
+    MatchesPatternValidation, InRangeValidation, InListValidation, CustomElementValidation, IsDistinctValidation
 
 try:
     from io import BytesIO as IO  # for modern python
@@ -29,10 +31,23 @@ D_MAP = {
     "是": True,
     "否": False,
     True: "是",
-    False: "否"
+    False: "否",
 }
 
-COLUMN_LIST = [
+D_TRANSLATE = {
+    'nan': '',
+    'row': '行',
+    'column': '列',
+    'contains trailing whitespace': '末尾含有空白字符',
+    'contains leading whitespace': '起始含有空白字符',
+    'is not in the list of legal options': '不在下列合法选项中',
+    'does not match the pattern "^[H]{1}(\d){9}$"': '格式不符合"字母H开头跟随9位数字"',
+    'contains values that are not unique': '含有和该列其他单元格重复的数据',
+    'cannot be converted to type': '必须为整数',
+    'was not in the range': '超出了该字段允许的范围',
+}
+
+COL = [
     '区域',
     '大区',
     '地区经理',
@@ -54,7 +69,7 @@ COLUMN_LIST = [
     '备注'
 ]
 
-COLUMN_REINDEX_LIST = [
+COL_REINDEX = [
     '区域',
     '大区',
     '地区经理',
@@ -86,7 +101,7 @@ class ChartView(APIView):
 
 
 def get_chart(request, chart):
-    df = get_df_clients(request.user, table=False)
+    df = get_df_clients(request.user)
     if chart == 'scatter_client':
         df['客户姓名'] = df['区域']+'_'+df['大区']+'_'+df['地区经理']+'_'+df['负责代表']+'_'+df['客户姓名']
         df = df.loc[: , ['客户姓名', '月累计相关病人数', '当前月处方量']]
@@ -94,14 +109,15 @@ def get_chart(request, chart):
         df.set_index(['客户姓名'], inplace=True)
         c = bubble(df, symbol_size=0.2, show_label=False)
     elif chart == 'bar_dsm':
-        pivot = pd.pivot_table(df, index='地区经理', values='客户姓名', aggfunc='count')
-        pivot.columns = ['客户档案数']
-        c = bar(pivot)
+        pivoted = pd.pivot_table(df, index='地区经理', values='客户姓名', aggfunc='count')
+        pivoted.columns = ['客户档案数']
+        c = bar(pivoted)
     return c.dump_options()
 
 
 def ajax_table(request, index):
-    df = get_df_clients(request.user, table=False)
+    df = get_df_clients(request.user)
+    table_id =request.GET['table_id']
 
     df_client_n = pd.pivot_table(df, index=index, values='客户姓名', aggfunc='count')
     df_client_n_cv= pd.pivot_table(df, index=index, columns='所在科室', values='客户姓名', aggfunc=len).loc[:, '心内科']
@@ -130,23 +146,25 @@ def ajax_table(request, index):
     df_combined['客户数/医院'] = df_combined['客户档案数']/df_combined['医院数']
 
     table = df_combined.to_html(formatters=build_formatters_by_col(df_combined), classes='ui celled table',
-                                   table_id='table_rsp', escape=False)
+                                   table_id=table_id, escape=False)
     return HttpResponse(table)
 
 
 @login_required()
 def clients(request):
-    clients = get_df_clients(request.user)
+    df = get_df_clients(request.user)
+    clients = df_to_table(df)
+    record_n = df.shape[0]
     context = {
         'table': clients,
-
+        'record_n': record_n,
     }
     return render(request, 'clientfile/clients.html', context)
 
 
 @login_required()
 def export_clients(request):
-    df = get_df_clients(request.user, False)
+    df = get_df_clients(request.user)
     excel_file = IO()
 
     xlwriter = pd.ExcelWriter(excel_file, engine='xlsxwriter')
@@ -190,14 +208,14 @@ def import_excel(request):
                     context['msg'] = '读取Excel文件错误'
                 return JsonResponse(context)
             else:
-                if set(COLUMN_LIST).issubset(df.columns) is False:  # 检查读取工作表表头时字段名不匹配错误
-                    column_diff = set(COLUMN_LIST) - set(list(df.columns.values))  # 缺少的字段列表
+                if set(COL).issubset(df.columns) is False:  # 检查读取工作表表头时字段名不匹配错误
+                    column_diff = set(COL) - set(list(df.columns.values))  # 缺少的字段列表
                     context['msg'] = '缺少以下必须字段，请检查' + str(column_diff)
                     return JsonResponse(context)
                 else:
-                    if dsm_auth(request.user, df[COLUMN_LIST[2]].unique())[0] is False:  # 权限检查，只能上传自己/下属dsm的数据
+                    if dsm_auth(request.user, df[COL[2]].unique())[0] is False:  # 权限检查，只能上传自己/下属dsm的数据
                         context['msg'] = '权限错误，只能上传自己/下属dsm的数据，你没有权限上传下列dsm的数据' + \
-                                         str(dsm_auth(request.user, df[COLUMN_LIST[2]].unique())[1])
+                                         str(dsm_auth(request.user, df[COL[2]].unique())[1])
                         return JsonResponse(context)
                     else:
                         d_error = validate(df)
@@ -209,33 +227,67 @@ def import_excel(request):
                             import_record(df)
                             context['code'] = 1
                             context['msg'] = '上传成功'
-                            context['data'] = get_df_clients(request.user)
+                            context['data'] = df_to_table(get_df_clients(request.user))
                             return JsonResponse(context)
 
 @login_required()
 def analysis(request):
-    clients = get_df_clients(request.user)
-    context = {
-        'table': clients,
-
-    }
-    return render(request, 'clientfile/analysis.html', context)
+    return render(request, 'clientfile/analysis.html')
 
 
 def validate(df):
+    print(df.columns)
     d_error = {}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[4], COLUMN_LIST[5], 'both')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[0], COLUMN_LIST[1], 'right')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[1], COLUMN_LIST[2], 'right')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[2], COLUMN_LIST[3], 'right')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[4], COLUMN_LIST[6], 'left')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[4], COLUMN_LIST[7], 'left')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[4], COLUMN_LIST[8], 'left')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[4], COLUMN_LIST[9], 'left')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[5], COLUMN_LIST[6], 'left')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[5], COLUMN_LIST[7], 'left')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[5], COLUMN_LIST[8], 'left')}
-    d_error = {**d_error, **check_inconsist(df, COLUMN_LIST[5], COLUMN_LIST[9], 'left')}
+    list_dept = [x[0] for x in DEPT_CHOICES]
+    list_hplevel =  [x[0] for x in HPLEVEL_CHOICES]
+    list_province = [x[0] for x in PROVINCE_CHOICES]
+
+    NullValidation = CustomElementValidation(lambda d: d is not np.nan, '该字段不能为空')
+    schema = Schema([
+        Column('区域', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+        Column('大区', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+        Column('地区经理', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+        Column('负责代表', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+        Column('医院编码', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation, MatchesPatternValidation(r'^[H]{1}(\d){9}$')]),
+        Column('医院全称', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+        Column('省/自治区/直辖市',[InListValidation(list_province)]),
+        Column('是否双call', [InListValidation(['是', '否'])]),
+        Column('医院级别', [InListValidation(list_hplevel)]),
+        Column('开户进展', [InListValidation(['已开户', '未开户'])]),
+        Column('客户姓名', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), IsDistinctValidation()]),
+        Column('所在科室', [InListValidation(list_dept)]),
+        Column('职称', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+        Column('客户\n联系电话', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation()]),
+        Column('月出诊次数（半天计）', [CanConvertValidation(int), InRangeValidation(0, 62)]),
+        Column('每半天\n门诊量', [CanConvertValidation(int), InRangeValidation(0, )]),
+        Column('月累计\n门诊病人数', [CanConvertValidation(int), InRangeValidation(0, )]),
+        Column('相关病人\n比例(%)\n建议比例：40%-80%', [CanConvertValidation(int), InRangeValidation(0, 100)]),
+        Column('当前月\n处方量', [CanConvertValidation(int)]),
+        Column('备注')
+        # Column('Family Name', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation()]),
+        # Column('Age', [InRangeValidation(0, 120)]),
+        # Column('Sex', [InListValidation(['Male', 'Female', 'Other'])]),
+        # Column('Customer ID', [MatchesPatternValidation(r'\d{4}[A-Z]{4}')])
+    ])
+    errors = schema.validate(df)
+    for error in errors:
+        str_warning = str(error)
+        for term in D_TRANSLATE:
+            str_warning = str_warning.replace(term, D_TRANSLATE[term])
+        d_error[str_warning] = '<br>'
+
+    d_error = {**d_error, **check_inconsist(df, '医院编码', '医院全称', 'both')}
+    d_error = {**d_error, **check_inconsist(df, '区域', '大区', 'right')}
+    d_error = {**d_error, **check_inconsist(df, '大区', '地区经理', 'right')}
+    d_error = {**d_error, **check_inconsist(df, '地区经理', '负责代表', 'right')}
+    d_error = {**d_error, **check_inconsist(df, '医院编码', '省/自治区/直辖市', 'left')}
+    d_error = {**d_error, **check_inconsist(df, '医院编码', '是否双call', 'left')}
+    d_error = {**d_error, **check_inconsist(df, '医院编码', '医院级别', 'left')}
+    d_error = {**d_error, **check_inconsist(df, '医院编码', '开户进展', 'left')}
+    d_error = {**d_error, **check_inconsist(df, '医院全称', '省/自治区/直辖市', 'left')}
+    d_error = {**d_error, **check_inconsist(df, '医院全称', '是否双call', 'left')}
+    d_error = {**d_error, **check_inconsist(df, '医院全称', '医院级别', 'left')}
+    d_error = {**d_error, **check_inconsist(df, '医院全称', '开户进展', 'left')}
     return d_error
 
 
@@ -269,7 +321,7 @@ def dsm_auth(user, dsm_list):
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
-def get_df_clients(user, table=True):
+def get_df_clients(user):
     if user.is_staff:
         clients = Client.objects.all()
         df_clients = pd.DataFrame(list(clients.values()))
@@ -289,28 +341,24 @@ def get_df_clients(user, table=True):
         df_new['hp_access'] = df_new['hp_access'].map(D_MAP)
         df_new['note'].fillna('', inplace=True)
         df_new['target_prop'] = df_new['target_prop']/100
-        df_new['monthly_target_patients'] = df_new['consulting_times']*df_new['patients_half_day']*df_new['target_prop']
+        df_new['monthly_target_patients'] = round(df_new['consulting_times']*df_new['patients_half_day']*df_new['target_prop'], 0)
         df_new['potential_level'] = df_new['monthly_target_patients'].apply(
             lambda x: 'L' if x < 83 else ('M' if x < 205 else 'H'))
         df_new['favor_level'] = df_new['monthly_prescription'].apply(
             lambda x: 0 if x <= 20 else (1 if x <= 100 else (2 if x <= 300 else 3)))
 
-        df_new.columns = COLUMN_REINDEX_LIST
+        df_new.columns = COL_REINDEX
 
-        if table is True:
-            # df_new['操作'] = df_new['操作'].apply(lambda x:
-            #                                   '<div data-tooltip="修改" data-position="top left">'
-            #                                   '<a href="javascript:void(0);" onclick="modify_record({0});">'
-            #                                   '<i class="edit icon"></i></a></div>'
-            #                                   '<div data-tooltip="删除" data-position="top left">'
-            #                                   '<a href="javascript:void(0);" onclick="delete_record({0});">'
-            #                                   '<i class="x icon"></i></a></div>'
-            #                                   .format(x))
-            table = df_new.to_html(formatters=build_formatters_by_col(df_new), classes='ui celled small table',
-                                   table_id='table', escape=False, index=False)
-            return table
-        else:
-            return df_new
+        return df_new
+    else:
+        return pd.DataFrame()
+
+
+def df_to_table(df):
+    if df.empty is False:
+        table = df.to_html(formatters=build_formatters_by_col(df), classes='ui celled small table',
+                               table_id='table', escape=False, index=False)
+        return table
     else:
         return "无记录"
 
@@ -323,24 +371,24 @@ def import_record(df):
     Client.objects.filter(dsm__in=df['地区经理'].unique()).delete()
 
     for index, row in df.iterrows():
-        client = Client.objects.update_or_create(rd=row[COLUMN_LIST[0]],
-                                                 rm=row[COLUMN_LIST[1]],
-                                                 dsm=row[COLUMN_LIST[2]],
-                                                 rsp=row[COLUMN_LIST[3]],
-                                                 xlt_id=row[COLUMN_LIST[4]],
-                                                 hospital=row[COLUMN_LIST[5]],
-                                                 province=row[COLUMN_LIST[6]],
-                                                 dual_call=row[COLUMN_LIST[7]],
-                                                 hp_level=row[COLUMN_LIST[8]],
-                                                 hp_access=row[COLUMN_LIST[9]],
-                                                 name=row[COLUMN_LIST[10]],
-                                                 dept=row[COLUMN_LIST[11]],
-                                                 title=row[COLUMN_LIST[12]],
-                                                 phone=row[COLUMN_LIST[13]],
-                                                 consulting_times=row[COLUMN_LIST[14]],
-                                                 patients_half_day=row[COLUMN_LIST[15]],
-                                                 target_prop=row[COLUMN_LIST[16]],
-                                                 monthly_prescription=row[COLUMN_LIST[17]],
-                                                 note=row[COLUMN_LIST[18]]
+        client = Client.objects.update_or_create(rd=row[COL[0]],
+                                                 rm=row[COL[1]],
+                                                 dsm=row[COL[2]],
+                                                 rsp=row[COL[3]],
+                                                 xlt_id=row[COL[4]],
+                                                 hospital=row[COL[5]],
+                                                 province=row[COL[6]],
+                                                 dual_call=row[COL[7]],
+                                                 hp_level=row[COL[8]],
+                                                 hp_access=row[COL[9]],
+                                                 name=row[COL[10]],
+                                                 dept=row[COL[11]],
+                                                 title=row[COL[12]],
+                                                 phone=row[COL[13]],
+                                                 consulting_times=row[COL[14]],
+                                                 patients_half_day=row[COL[15]],
+                                                 target_prop=row[COL[16]],
+                                                 monthly_prescription=row[COL[17]],
+                                                 note=row[COL[18]]
                                                  )
 

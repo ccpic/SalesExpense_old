@@ -1,6 +1,6 @@
 <!-- extends表明此页面继承自 base.html 文件 -->
 {% extends "sheets/base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% load tags %}
 
 <!-- 写入 base.html 中定义的 title -->
@@ -49,6 +49,15 @@ DSM客户档案管理
             <div class="ui container">
                 <div id="bar_dsm" style="width:1024px; height:600px;"></div>
             </div>
+            <h3 class="ui header">
+                <div class="content">
+                    地区经理
+                    <div class="sub header">档案分析</div>
+                </div>
+            </h3>
+            <div class="ui divider"></div>
+            <div class="ui container" id='dsm_summary' style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+            </div>
         </div>
         <div class="ui tab segment" data-tab="management_rsp">
             <h3 class="ui header">
@@ -73,32 +82,45 @@ $(document).ready(function() {
 
     $(
         function () {
-            getData('scatter_client', '{% url 'clientfile:ajax_chart' 'scatter_client' %}');
+            getData('scatter_client', '{% url 'clientfile:ajax_chart' 'scatter_client' %}')
             getData('bar_dsm', '{% url 'clientfile:ajax_chart' 'bar_dsm' %}');
+            getTable('dsm_summary', 'table_dsm', '{% url 'clientfile:ajax_table' '地区经理' %}');
+            getTable('rsp_summary', 'table_rsp', '{% url 'clientfile:ajax_table' '负责代表' %}');
         }
     );
-    $.ajax({
 
-        // 请求的url
-        url: '{% url 'clientfile:ajax_table' '负责代表' %}',
-        // 请求的type
-        type:'POST',
-        // 发送的数据
-        // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
-        success:function(ret){     //成功执行
-            // 把查询结果输出到网页上
-            $("#rsp_summary").html(ret);
-            $('#table_rsp').DataTable(
-                {
-                order: [[ 1, "desc" ]],
-                pageLength: 25,
-                autoWidth: false
-                });
-        },
-        error:function(){            //失败
-            console.log('失败')
-        }
-    });
+    function getTable(div_id, table_id, ajax_url){
+
+        $.ajax({
+
+            // 请求的url
+            url: ajax_url,
+            // 请求的type
+            type: 'GET',
+            data: {table_id: table_id},
+            // 发送的数据
+            // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+            success:function(ret){     //成功执行
+                // 把查询结果输出到网页上
+                $('#'+div_id).html(ret);
+
+
+                $('#'+table_id).DataTable(
+                    {
+                        order: [[1, "desc"]],
+                        pageLength: 25,
+                        autoWidth: false,
+                        language: {
+                            search: "在档案中搜索:",
+                            sLengthMenu: "每页显示 _MENU_ 条档案"
+                        }
+                    });
+            },
+            error: function () {            //失败
+                console.log('失败')
+            }
+        });
+    }
     function getData(chart_id, ajax_url) {
 
         var chart = echarts.init(document.getElementById(chart_id), 'white', {renderer: 'canvas'});

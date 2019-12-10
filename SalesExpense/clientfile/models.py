@@ -70,6 +70,7 @@ class Client(models.Model):
 
     class Meta:
         verbose_name = '客户档案'
+        verbose_name_plural = '客户档案'
         ordering = ['rd', 'rm', 'dsm', 'rsp', 'hospital', 'dept', 'name']
         unique_together = ('rsp', 'hospital', 'dept', 'name')
 

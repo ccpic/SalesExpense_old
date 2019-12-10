@@ -1,5 +1,5 @@
-{% load staticfiles %}
-<div class="ui inverted vertical footer segment">
+{% load static %}
+<div class="ui inverted mini footer segment">
     <div class="ui center aligned container">
       <!--<div class="ui stackable inverted divided grid">-->
         <!--<div class="three wide column">-->
@@ -36,11 +36,9 @@
       <!--</div>-->
       <!--<div class="ui inverted section divider"></div>-->
       <img src="{% static 'assets/images/logo.png'%}" class="ui centered mini image">
-      <!--<div class="ui horizontal inverted small divided link list">-->
-        <!--<a class="item" href="#">Site Map</a>-->
-        <!--<a class="item" href="#">Contact Us</a>-->
-        <!--<a class="item" href="#">Terms and Conditions</a>-->
-        <!--<a class="item" href="#">Privacy Policy</a>-->
-      <!--</div>-->
+      <div class="ui horizontal inverted small divided link list">
+          <div class="item">联系管理员</div>
+          <a class="item" href="mailto:gaoshanshan@salubris.com">gaoshanshan@salubris.com</a>
+      </div>
     </div>
   </div>

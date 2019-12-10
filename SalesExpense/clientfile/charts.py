@@ -1,6 +1,5 @@
 from pyecharts.charts import Line, Pie, Bar, Geo, Scatter
 from pyecharts import options as opts
-from example.commons import Faker
 import numpy as np
 import json
 from django.http import HttpResponse

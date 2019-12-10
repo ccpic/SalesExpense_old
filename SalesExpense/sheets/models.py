@@ -8,6 +8,8 @@ class Staff(MPTTModel):
     parent = models.ForeignKey('self', on_delete=models.PROTECT, verbose_name='上级人员', null=True, blank=True, related_name='children')
 
     class Meta:
+        verbose_name = '员工'
+        verbose_name_plural = '团队架构'
         db_table = 'staff'
 
     def __str__(self):
@@ -21,6 +23,8 @@ class Hospital(models.Model):
     dsm = models.ForeignKey(Staff, on_delete=models.PROTECT, verbose_name='所属大区')
 
     class Meta:
+        verbose_name = '医院-代表'
+        verbose_name_plural = '医院-代表'
         ordering = ['name', 'rsp', 'dsm']
 
     def __str__(self):
@@ -40,6 +44,8 @@ class Record(models.Model):
     note_text = models.CharField(max_length=200, blank=True, null=True, verbose_name='备注')
 
     class Meta:
+        verbose_name = '费用记录'
+        verbose_name_plural = '费用记录'
         ordering = ['hospital__name', 'hospital__rsp', 'record_date']
 
     def __str__(self):
