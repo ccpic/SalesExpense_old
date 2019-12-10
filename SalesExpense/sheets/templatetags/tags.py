@@ -33,3 +33,11 @@ def multiply(value, arg):
             return value * arg
     except: pass
     return ''
+
+
+@register.filter(name='times')
+def times(number):
+    try:
+        return range(1, number+1)
+    except:
+        return []

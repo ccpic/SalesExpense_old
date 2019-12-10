@@ -2,6 +2,7 @@
 {% extends "sheets/base.html" %}
 {% load static %}
 {% load tags %}
+{% load el_pagination_tags %}
 
 <!-- 写入 base.html 中定义的 title -->
 {% block title %}
@@ -50,6 +51,7 @@ DSM客户档案管理
             <div class="ui container">
                 {% if client_list %}
                 <div class="ui four cards">
+                    {% paginate 12 client_list %}
                     {% for client in client_list %}
                     <div class="card">
                         <div class="content">
@@ -108,6 +110,39 @@ DSM客户档案管理
                     </div>
                     {% endfor %}
                 </div>
+                <div class="ui hidden divider"></div>
+                    {% get_pages %}
+                    <div class="ui pagination menu">
+                        {% if pages.paginated %}
+                            {% show_current_number as current_page_number %}
+
+                            <a class="item" href="{{ pages.first.path }}">&lt;&lt;</a>
+
+                            {% if current_page_number|add:'-4' > 1 %}
+                                <a class="item" href="?page={{ current_page_number|add:'-5' }}">&hellip;</a>
+                            {% endif %}
+
+
+                            {% for n in pages|length|times %}
+                                {% if n == current_page_number %}
+                                    <span class="active item" href="?page={{ n }}">{{ n }}</span>
+                                {% elif n > current_page_number|add:'-5' and n < current_page_number|add:'5' %}
+                                    <a class="item" href="?page={{ n }}">{{ n }}</a>
+                                {% endif %}
+                            {% endfor %}
+
+
+                            {% if pages|length > current_page_number|add:'4' %}
+                                <a class="item" href="?page={{ current_page_number|add:'5' }}">&hellip;</a>
+                            {% endif %}
+
+                            <a class="item" href="{{ pages.last.path }}">&gt;&gt;</a>
+                        {% endif %}
+                    </div>
+                <div class="ui top right attached label">                    <span>&nbsp;&nbsp;&nbsp;&nbsp;当前显示第
+                    {{ pages.current_start_index }}-{{ pages.current_end_index }} of {{ pages.total_count }}条档案
+                    </span></div>
+
                 {% endif %}
             </div>
         </div>
@@ -228,8 +263,12 @@ $(document).ready(function() {
 
 </script>
 <script>
-    $('.pointing.secondary.menu .item').tab();
-    $(".rating").rating('disable');
-    $('.ui.dropdown').dropdown();
+    $(document).ready(function(){
+        $('.pointing.secondary.menu .item').tab();
+        $(".rating").rating('disable');
+        $('.ui.dropdown').dropdown();
+        // $('.endless_page_link').attr('class', 'item');
+    });
+
 </script>
 {% endblock index %}
