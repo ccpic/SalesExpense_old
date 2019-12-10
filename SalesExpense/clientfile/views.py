@@ -232,7 +232,15 @@ def import_excel(request):
 
 @login_required()
 def analysis(request):
-    clients = sorted (Client.objects.order_by('monthly_prescription'), key=lambda p: p.monthly_patients(), reverse=True)
+    if request.user.is_staff:
+        clients = Client.objects.order_by('-monthly_prescription')
+    else:
+        staffs = Staff.objects.get(name=request.user).get_descendants(include_self=True)
+        staff_list = [i.name for i in staffs]
+
+        clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
+            rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list).order_by('-monthly_prescription')
+    clients = sorted (clients, key=lambda p: p.monthly_patients(), reverse=True)
     context = {
         'client_list': clients
     }
