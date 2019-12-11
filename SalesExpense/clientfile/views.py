@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.shortcuts import render
 from rest_framework.views import APIView
 from django.contrib.auth.decorators import login_required
@@ -11,6 +12,7 @@ import numpy as np
 import datetime
 from .charts import *
 import json
+import re
 from pandas_schema import Column, Schema
 from pandas_schema.validation import LeadingWhitespaceValidation, TrailingWhitespaceValidation, CanConvertValidation, \
     MatchesPatternValidation, InRangeValidation, InListValidation, CustomElementValidation, IsDistinctValidation
@@ -287,6 +289,8 @@ def validate(df):
         str_warning = str(error)
         for term in D_TRANSLATE:
             str_warning = str_warning.replace(term, D_TRANSLATE[term])
+            findword = r': [0-9]\d*'
+            str_warning = re.sub(findword, row_refined,str_warning)
         d_error[str_warning] = '<br>'
 
     d_error = {**d_error, **check_inconsist(df, '医院编码', '医院全称', 'both')}
@@ -405,3 +409,8 @@ def import_record(df):
                                                  note=row[COL[18]]
                                                  )
 
+def row_refined(matched):
+    string = matched.group()[2:]
+    row_n = int(string) + 2
+    string = str(row_n)
+    return string
