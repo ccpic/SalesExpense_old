@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'clientfile',
     'pyecharts',
     'rest_framework',
+    'el_pagination',
 ]
 
 MIDDLEWARE = [
