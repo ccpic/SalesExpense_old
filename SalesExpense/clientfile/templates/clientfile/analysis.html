@@ -55,12 +55,12 @@ DSM客户档案管理
                     {% for client in client_list %}
                     <div class="card">
                         <div class="content">
-                            {% if client.phone != None %}
-                            <div class="right floated meta">
-                                    <i class="phone icon"></i>
-                                        {{ client.phone }}
-                            </div>
-                            {% endif %}
+<!--                            {% if client.phone != None %}-->
+<!--                            <div class="right floated meta">-->
+<!--                                    <i class="phone icon"></i>-->
+<!--                                        {{ client.phone }}-->
+<!--                            </div>-->
+<!--                            {% endif %}-->
                             <div class="header">{{ client.name }}</div>
                         </div>
                         <div class="content">
@@ -80,20 +80,12 @@ DSM客户档案管理
                                 <div class="ui list">
 
                                     <div class="item">
-                                        <a class="ui blue ribbon label">相关病人</a>
+                                        <a class="ui red ribbon label">相关病人</a>
                                         <span>{{ client.monthly_patients|stringformat:".0f" }}</span>
                                     </div>
                                     <div class="item">
-                                        <a class="ui red ribbon label">现有处方</a>
-                                        <span>{{ client.monthly_prescription}}</span>
-                                    </div>
-                                    <div class="item">
-                                        <a class="ui purple ribbon label">潜力评级</a>
+                                        <a class="ui blue ribbon label">潜力评级</a>
                                             <div class="ui star rating" data-rating="{{ client.potential_level }}" data-max-rating="3"></div>
-                                    </div>
-                                    <div class="item">
-                                        <a class="ui teal ribbon label">支持评级</a>
-                                            <div class="ui heart rating" data-rating="{{ client.favor_level }}" data-max-rating="4"></div>
                                     </div>
                                 </div>
 
@@ -149,13 +141,13 @@ DSM客户档案管理
         <div class="ui tab segment" data-tab="client_level">
             <h3 class="ui header">
                 <div class="content">
-                    客户分层
-                    <div class="sub header">潜力 versus 支持度</div>
+                    客户潜力分布
+                    <div class="sub header">月相关病人数</div>
                 </div>
             </h3>
             <div class="ui divider"></div>
             <div class="ui container">
-                <div id="scatter_client" style="width:1024px; height:600px;"></div>
+                <div id="treemap_rsp_hosp_client" style="width:1024px; height:600px;"></div>
             </div>
         </div>
         <div class="ui tab segment" data-tab="management_dsm">
@@ -202,7 +194,7 @@ $(document).ready(function() {
 
     $(
         function () {
-            getData('scatter_client', '{% url 'clientfile:ajax_chart' 'scatter_client' %}')
+            getData('treemap_rsp_hosp_client', '{% url 'clientfile:ajax_chart' 'treemap_rsp_hosp_client' %}')
             getData('bar_dsm', '{% url 'clientfile:ajax_chart' 'bar_dsm' %}');
             getTable('dsm_summary', 'table_dsm', '{% url 'clientfile:ajax_table' '地区经理' %}');
             getTable('rsp_summary', 'table_rsp', '{% url 'clientfile:ajax_table' '负责代表' %}');

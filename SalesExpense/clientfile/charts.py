@@ -1,5 +1,6 @@
-from pyecharts.charts import Line, Pie, Bar, Geo, Scatter
+from pyecharts.charts import Line, Pie, Bar, Geo, Scatter, TreeMap
 from pyecharts import options as opts
+from pyecharts.commons.utils import JsCode
 import numpy as np
 import json
 from django.http import HttpResponse
@@ -493,3 +494,21 @@ def bubble(df, yavg=None, symbol_size=1, show_label=True, formatter_y='{value}')
         bubble = (Scatter())
 
     return bubble
+
+
+def treemap(d, series_name):
+    c = (
+        TreeMap()
+            .add(series_name, d)
+            .set_series_opts(
+            label_opts=opts.LabelOpts(position="inside",
+                                      font_size=10,
+                                      font_weight='lighter',
+                                      formatter='{b}\n{c}'
+                                      ),
+        )
+            .set_global_opts(toolbox_opts=opts.ToolboxOpts(is_show=True),
+                             legend_opts=opts.LegendOpts(is_show=False),
+                             )
+    )
+    return c

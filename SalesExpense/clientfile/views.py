@@ -63,11 +63,9 @@ COL = [
     '客户姓名',
     '所在科室',
     '职称',
-    '客户\n联系电话',
     '月出诊次数（半天计）',
     '每半天\n门诊量',
     '相关病人\n比例(%)\n建议比例：40%-80%',
-    '当前月\n处方量',
     '备注'
 ]
 
@@ -85,15 +83,12 @@ COL_REINDEX = [
     '客户姓名',
     '所在科室',
     '职称',
-    '客户联系电话',
     '月出诊次数（半天计）',
     '每半天门诊量',
     '相关病人比例(%)',
-    '当前月处方量',
     '备注',
     '月累计相关病人数',
     '潜力级别',
-    '支持度级别',
 ]
 
 class ChartView(APIView):
@@ -114,6 +109,21 @@ def get_chart(request, chart):
         pivoted = pd.pivot_table(df, index='地区经理', values='客户姓名', aggfunc='count')
         pivoted.columns = ['客户档案数']
         c = bar(pivoted)
+    elif chart == 'treemap_rsp_hosp_client':
+        pivoted = pd.pivot_table(df, index=['负责代表', '医院全称', '客户姓名'], values='月累计相关病人数', aggfunc=sum)
+        df = pivoted.reset_index()
+
+        list_rsp = [{'value': sum(v.tolist()), 'name': k } for k, v in df.groupby("负责代表")["月累计相关病人数"]]
+        for rsp in list_rsp:
+            df2 = df[df['负责代表'] == rsp['name']]
+            list_hosp = [{'value': sum(v.tolist()), 'name': k } for k, v in df2.groupby("医院全称")["月累计相关病人数"]]
+            rsp['children'] = list_hosp
+            for hosp in list_hosp:
+                df3 = df[(df['负责代表'] == rsp['name'])&(df['医院全称'] == hosp['name'])]
+                list_client = [{'value': sum(v.tolist()), 'name': k} for k, v in df3.groupby("客户姓名")["月累计相关病人数"]]
+                hosp['children'] = list_client
+
+        c = treemap(list_rsp, str(request.user))
     return c.dump_options()
 
 
@@ -125,12 +135,10 @@ def ajax_table(request, index):
     df_client_n_cv= pd.pivot_table(df, index=index, columns='所在科室', values='客户姓名', aggfunc=len).loc[:, '心内科']
     df_client_n_noaccess= pd.pivot_table(df, index=index, columns='是否开户', values='客户姓名', aggfunc=len).loc[:, '是']
     df_hosp_n = pd.pivot_table(df, index=index, values='医院全称', aggfunc=lambda x: len(x.unique()))
-    df_monthly_prescriptions = pd.pivot_table(df, index=index, values='当前月处方量', aggfunc=np.mean)
     df_monthly_patients = pd.pivot_table(df, index=index, values='月累计相关病人数', aggfunc=np.mean)
     df_combined = pd.concat([df_client_n,
                              df_client_n_cv,
                              df_client_n_noaccess,
-                             df_monthly_prescriptions,
                              df_monthly_patients,
                              df_hosp_n,
                              ], axis=1)
@@ -138,7 +146,6 @@ def ajax_table(request, index):
     df_combined.columns = ['客户档案数',
                            '心内档案比例',
                            '开户医院档案比例',
-                           '平均当前月处方量',
                            '平均月累积相关病人数',
                            '医院数',
                            ]
@@ -155,7 +162,7 @@ def ajax_table(request, index):
 @login_required()
 def clients(request):
     df = get_df_clients(request.user)
-    clients = df_to_table(df)
+    clients = df_to_table(df, ['医院编码', '是否双call'])
     record_n = df.shape[0]
     context = {
         'table': clients,
@@ -193,6 +200,7 @@ def import_excel(request):
     SHEET_NAME = '客户档案'
     context = {'code': 0,
                'data': [],
+               'recourd_n': 0,
                'msg': ''
                }
     if request.method == 'POST':
@@ -215,7 +223,7 @@ def import_excel(request):
                     context['msg'] = '缺少以下必须字段，请检查' + str(column_diff)
                     return JsonResponse(context)
                 else:
-                    if dsm_auth(request.user, df[COL[2]].unique())[0] is False:  # 权限检查，只能上传自己/下属dsm的数据
+                    if dsm_auth(request.user, df['地区经理'].unique())[0] is False:  # 权限检查，只能上传自己/下属dsm的数据
                         context['msg'] = '权限错误，只能上传自己/下属dsm的数据，你没有权限上传下列dsm的数据' + \
                                          str(dsm_auth(request.user, df[COL[2]].unique())[1])
                         return JsonResponse(context)
@@ -229,33 +237,33 @@ def import_excel(request):
                             import_record(df)
                             context['code'] = 1
                             context['msg'] = '上传成功'
-                            context['data'] = df_to_table(get_df_clients(request.user))
+                            context['data'] = df_to_table(get_df_clients(request.user), ['医院编码', '是否双call'])
+                            context['record_n'] = df.shape[0]
                             return JsonResponse(context)
 
 @login_required()
 def analysis(request):
     if request.user.is_staff:
-        clients = Client.objects.order_by('-monthly_prescription')
+        clients = Client.objects.all()
     else:
         staffs = Staff.objects.get(name=request.user).get_descendants(include_self=True)
         staff_list = [i.name for i in staffs]
 
         clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
-            rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list).order_by('-monthly_prescription')
+            rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
     clients = sorted (clients, key=lambda p: p.monthly_patients(), reverse=True)
     context = {
         'client_list': clients
     }
-    print(context)
     return render(request, 'clientfile/analysis.html', context)
 
 
 def validate(df):
-    print(df.columns)
     d_error = {}
     list_dept = [x[0] for x in DEPT_CHOICES]
     list_hplevel =  [x[0] for x in HPLEVEL_CHOICES]
     list_province = [x[0] for x in PROVINCE_CHOICES]
+    list_title = [x[0] for x in TITLE_CHOICES]
 
     NullValidation = CustomElementValidation(lambda d: d is not np.nan, '该字段不能为空')
     schema = Schema([
@@ -271,20 +279,13 @@ def validate(df):
         Column('开户进展', [InListValidation(['已开户', '未开户'])]),
         Column('客户姓名', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), IsDistinctValidation()]),
         Column('所在科室', [InListValidation(list_dept)]),
-        Column('职称', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
-        Column('客户\n联系电话', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation()]),
+        Column('职称', [InListValidation(list_title)]),
         Column('月出诊次数（半天计）', [CanConvertValidation(int), InRangeValidation(0, 62)]),
         Column('每半天\n门诊量', [CanConvertValidation(int), InRangeValidation(0, )]),
-        Column('月累计\n门诊病人数', [CanConvertValidation(int), InRangeValidation(0, )]),
         Column('相关病人\n比例(%)\n建议比例：40%-80%', [CanConvertValidation(int), InRangeValidation(0, 100)]),
-        Column('当前月\n处方量', [CanConvertValidation(int)]),
         Column('备注')
-        # Column('Family Name', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation()]),
-        # Column('Age', [InRangeValidation(0, 120)]),
-        # Column('Sex', [InListValidation(['Male', 'Female', 'Other'])]),
-        # Column('Customer ID', [MatchesPatternValidation(r'\d{4}[A-Z]{4}')])
     ])
-    errors = schema.validate(df)
+    errors = schema.validate(df.loc[:, COL])
     for error in errors:
         str_warning = str(error)
         for term in D_TRANSLATE:
@@ -351,8 +352,8 @@ def get_df_clients(user):
         df_clients = pd.DataFrame(list(clients.values()))
     if df_clients.empty is False:
         df_new = df_clients.reindex(columns=['rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',
-                                             'hp_level', 'hp_access', 'name', 'dept', 'title', 'phone', 'consulting_times',
-                                             'patients_half_day', 'target_prop', 'monthly_prescription', 'note'])
+                                             'hp_level', 'hp_access', 'name', 'dept', 'title', 'consulting_times',
+                                             'patients_half_day', 'target_prop', 'note'])
 
         df_new['dual_call'] = df_new['dual_call'].map(D_MAP)
         df_new['hp_access'] = df_new['hp_access'].map(D_MAP)
@@ -360,9 +361,7 @@ def get_df_clients(user):
         df_new['target_prop'] = df_new['target_prop']/100
         df_new['monthly_target_patients'] = round(df_new['consulting_times']*df_new['patients_half_day']*df_new['target_prop'], 0)
         df_new['potential_level'] = df_new['monthly_target_patients'].apply(
-            lambda x: 'L' if x < 83 else ('M' if x < 205 else 'H'))
-        df_new['favor_level'] = df_new['monthly_prescription'].apply(
-            lambda x: 0 if x <= 20 else (1 if x <= 100 else (2 if x <= 300 else 3)))
+            lambda x: 'L' if x < 80 else ('M' if x < 200 else 'H'))
 
         df_new.columns = COL_REINDEX
 
@@ -371,7 +370,9 @@ def get_df_clients(user):
         return pd.DataFrame()
 
 
-def df_to_table(df):
+def df_to_table(df, ignore_columns=None):
+    if ignore_columns is not None and df.empty is False:
+        df.drop(columns=ignore_columns, inplace=True)
     if df.empty is False:
         table = df.to_html(formatters=build_formatters_by_col(df), classes='ui celled small table',
                                table_id='table', escape=False, index=False)
@@ -401,13 +402,12 @@ def import_record(df):
                                                  name=row[COL[10]],
                                                  dept=row[COL[11]],
                                                  title=row[COL[12]],
-                                                 phone=row[COL[13]],
-                                                 consulting_times=row[COL[14]],
-                                                 patients_half_day=row[COL[15]],
-                                                 target_prop=row[COL[16]],
-                                                 monthly_prescription=row[COL[17]],
-                                                 note=row[COL[18]]
+                                                 consulting_times=row[COL[13]],
+                                                 patients_half_day=row[COL[14]],
+                                                 target_prop=row[COL[15]],
+                                                 note=row[COL[16]]
                                                  )
+
 
 def row_refined(matched):
     string = matched.group()[2:]

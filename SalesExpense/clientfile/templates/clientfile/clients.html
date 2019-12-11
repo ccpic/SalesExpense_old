@@ -42,7 +42,7 @@ DSM客户档案管理
     {% endif %}
     <div class="ui container">
         <h2 class="ui blue dividing header">现有档案</h2>
-        <input type="button" class="ui blue submit button" value="导出{{ record_n }}条客户档案" onclick="location.href='{% url 'clientfile:export_clients' %}'">
+        <input type="button" class="ui blue submit button" id="export_excel" value="导出{{ record_n }}条客户档案" onclick="location.href='{% url 'clientfile:export_clients' %}'">
         <div class="ui hidden divider"></div>
         <div class="ui container" id='result_table'
              style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
@@ -118,6 +118,7 @@ $(document).ready(function () {
                                 $("#msg").attr("class", "ui positive message");
                                 $("#msg").html(ret.msg);
                                 $("#result_table").html(ret.data);
+                                $("#export_excel").attr('value', '导出'+ret.record_n+'条客户档案');
                                 $('#table').DataTable({
                                     pageLength: 25,
                                     autoWidth: false,

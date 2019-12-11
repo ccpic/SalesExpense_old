@@ -47,7 +47,12 @@ DEPT_CHOICES = [
     ('老干科', '老干科'),
     ('其他科室', '其他科室')
 ]
-
+TITLE_CHOICES = [
+    ('主任医师', '主任医师'),
+    ('副主任医师', '副主任医师'),
+    ('主治医师', '主治医师'),
+    ('住院医师', '住院医师')
+]
 
 class Client(models.Model):
     rd = models.CharField(max_length=10, verbose_name='所属区域')
@@ -62,12 +67,12 @@ class Client(models.Model):
     hp_access = models.BooleanField(verbose_name='开户进展')
     dept = models.CharField(max_length=4, choices=DEPT_CHOICES, verbose_name='所在科室')
     name = models.CharField(max_length=10, verbose_name='客户姓名')
-    title = models.CharField(max_length=10, verbose_name='职称')
-    phone = models.IntegerField(verbose_name='客户联系电话', null=True, blank=True)
+    title = models.CharField(max_length=10, choices=TITLE_CHOICES, verbose_name='职称')
+    # phone = models.IntegerField(verbose_name='客户联系电话', null=True, blank=True)
     consulting_times = models.IntegerField(verbose_name='月出诊次数（半天计）')
     patients_half_day = models.IntegerField(verbose_name='每半天门诊量')
     target_prop = models.IntegerField(verbose_name='相关病人比例(%)')
-    monthly_prescription = models.IntegerField(verbose_name='当前月处方量')
+    # monthly_prescription = models.IntegerField(verbose_name='当前月处方量')
     note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
 
     class Meta:
@@ -83,19 +88,19 @@ class Client(models.Model):
         return round(self.consulting_times * self.patients_half_day * self.target_prop / 100, 0)
 
     def potential_level(self):
-        if self.monthly_patients() < 83:
+        if self.monthly_patients() < 80:
             return 1
-        elif self.monthly_patients() < 205:
+        elif self.monthly_patients() < 200:
             return 2
         else:
             return 3
 
-    def favor_level(self):
-        if self.monthly_prescription <= 20:
-            return 1
-        elif self.monthly_prescription <= 100:
-            return 2
-        elif self.monthly_prescription <= 300:
-            return 3
-        else:
-            return 4
+    # def favor_level(self):
+    #     if self.monthly_prescription <= 20:
+    #         return 1
+    #     elif self.monthly_prescription <= 100:
+    #         return 2
+    #     elif self.monthly_prescription <= 300:
+    #         return 3
+    #     else:
+    #         return 4
