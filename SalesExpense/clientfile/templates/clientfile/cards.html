@@ -1,0 +1,96 @@
+{% load tags %}
+{% load el_pagination_tags %}
+
+{% if client_list %}
+<div class="ui five cards">
+    {% paginate 15 client_list %}
+    {% for client in client_list %}
+    <div class="card">
+        <div class="content">
+            <!--                            {% if client.phone != None %}-->
+            <!--                            <div class="right floated meta">-->
+            <!--                                    <i class="phone icon"></i>-->
+            <!--                                        {{ client.phone }}-->
+            <!--                            </div>-->
+            <!--                            {% endif %}-->
+            <div class="header">{{ client.name }}</div>
+        </div>
+        <div class="content">
+            <div class="meta">
+                <div class="ui list">
+                    <div class="item">
+                        <span>{{ client.hospital }}</span>
+                    </div>
+                    <div class="item">
+                        <span>{{ client.dept }}</span>
+                        <span>{{ client.title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="ui list">
+
+                <div class="item">
+                    <a class="ui red ribbon label">相关病人</a>
+                    <span>{{ client.monthly_patients|stringformat:".0f" }}</span>
+                </div>
+                <div class="item">
+                    <a class="ui blue ribbon label">潜力评级</a>
+                    <div class="ui star rating" data-rating="{{ client.potential_level }}" data-max-rating="3"></div>
+                </div>
+            </div>
+
+        </div>
+        <div class="extra">
+            <div class="left floated meta">
+                <i class="marker icon"></i><span>{{ client.province }}</span>
+            </div>
+            <div class="right floated meta">
+                <span>{{ client.dsm }}</span>
+                <span>{{ client.rsp }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="ui hidden divider"></div>
+    {% get_pages %}
+    <div class="ui pagination menu">
+        {% if pages.paginated %}
+        {% show_current_number as current_page_number %}
+
+        <a class="item" href="{{ pages.first.path }}">&lt;&lt;</a>
+
+        {% if current_page_number|add:'-4' > 1 %}
+        <a class="item" href="?page={{ current_page_number|add:'-5' }}">&hellip;</a>
+        {% endif %}
+
+
+        {% for n in pages|length|times %}
+        {% if n == current_page_number %}
+        <span class="active item" href="?page={{ n }}">{{ n }}</span>
+        {% elif n > current_page_number|add:'-5' and n < current_page_number|add:'5' %}
+        <a class="item" href="?page={{ n }}">{{ n }}</a>
+        {% endif %}
+        {% endfor %}
+
+
+        {% if pages|length > current_page_number|add:'4' %}
+        <a class="item" href="?page={{ current_page_number|add:'5' }}">&hellip;</a>
+        {% endif %}
+
+        <a class="item" href="{{ pages.last.path }}">&gt;&gt;</a>
+        {% endif %}
+    </div>
+    <div class="ui top right attached label">                    <span>&nbsp;&nbsp;&nbsp;&nbsp;当前显示第
+        {{ pages.current_start_index }}-{{ pages.current_end_index }} of {{ pages.total_count }}条档案
+        </span></div>
+</div>
+{% endif %}
+
+<script>
+    $(document).ready(function(){
+        $(".rating").rating('disable');
+    });
+
+</script>

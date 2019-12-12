@@ -2,6 +2,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from .models import *
 from sheets.models import Staff
 from sheets.views import build_formatters_by_col
@@ -98,6 +99,7 @@ class ChartView(APIView):
 
 
 def get_chart(request, chart):
+    hosp_selected = request.POST.getlist('hosp-select[]')
     df = get_df_clients(request.user)
     if chart == 'scatter_client':
         df['客户姓名'] = df['区域']+'_'+df['大区']+'_'+df['地区经理']+'_'+df['负责代表']+'_'+df['客户姓名']
@@ -162,7 +164,7 @@ def ajax_table(request, index):
 @login_required()
 def clients(request):
     df = get_df_clients(request.user)
-    clients = df_to_table(df, ['医院编码', '是否双call'])
+    clients = df_to_table(df, ['医院编码', '是否双call', '省/自治区/直辖市'])
     record_n = df.shape[0]
     context = {
         'table': clients,
@@ -237,12 +239,39 @@ def import_excel(request):
                             import_record(df)
                             context['code'] = 1
                             context['msg'] = '上传成功'
-                            context['data'] = df_to_table(get_df_clients(request.user), ['医院编码', '是否双call'])
+                            context['data'] = df_to_table(get_df_clients(request.user), ['医院编码', '是否双call', '省/自治区/直辖市'])
                             context['record_n'] = df.shape[0]
                             return JsonResponse(context)
 
 @login_required()
 def analysis(request):
+    if request.is_ajax():
+        hosp_selected = request.POST.getlist('hosp-select[]')
+        rsp_selected = request.POST.getlist('rsp-select[]')
+
+        q = Q()
+        if len(hosp_selected) > 0:
+            q &= Q(hospital__in=hosp_selected)
+        if len(rsp_selected) > 0:
+            q &= Q(rsp__in=rsp_selected)
+
+        if request.user.is_staff:
+            clients = Client.objects.filter(q)
+        else:
+            staffs = Staff.objects.get(name=request.user).get_descendants(include_self=True)
+            staff_list = [i.name for i in staffs]
+
+            clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
+                rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
+            clients = clients.filter(q)
+
+        clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
+        context = {
+            'client_list': clients,
+        }
+
+        return render(request, 'clientfile/cards.html', context)
+
     if request.user.is_staff:
         clients = Client.objects.all()
     else:
@@ -251,9 +280,15 @@ def analysis(request):
 
         clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
             rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
-    clients = sorted (clients, key=lambda p: p.monthly_patients(), reverse=True)
+
+    clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
     context = {
-        'client_list': clients
+        'client_list': clients,
+        'rd_list': get_unique(clients, 'rd'),
+        'rm_list': get_unique(clients, 'rm'),
+        'dsm_list': get_unique(clients, 'dsm'),
+        'rsp_list': get_unique(clients, 'rsp'),
+        'hosp_list': get_unique(clients, 'hospital')
     }
     return render(request, 'clientfile/analysis.html', context)
 
@@ -414,3 +449,13 @@ def row_refined(matched):
     row_n = int(string) + 2
     string = str(row_n)
     return string
+
+
+def get_unique(qs, field):
+    unique_list = []
+    for query in qs:
+        if getattr(query, field) not in unique_list:
+            unique_list.append(getattr(query, field))
+    return unique_list
+
+

@@ -3,12 +3,12 @@ from ..models import Record
 
 register = template.Library()
 
-@register.simple_tag
-def active(request, pattern):
-    import re
-    if re.search(pattern, request.path):
-        return 'active'
-    return ''
+# @register.simple_tag
+# def active(request, pattern):
+#     import re
+#     if re.search(pattern, request.path):
+#         return 'active'
+#     return ''
 
 @register.filter
 def get_record(Record, pk):
@@ -24,10 +24,6 @@ def has_group(user, group_name):
 
 @register.filter
 def multiply(value, arg):
-    '''
-    Divides the value; argument is the divisor.
-    Returns empty string on any error.
-    '''
     try:
         if arg:
             return value * arg
@@ -41,3 +37,6 @@ def times(number):
         return range(1, number+1)
     except:
         return []
+
+
+

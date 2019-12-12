@@ -1,0 +1,58 @@
+<div class="ui container">
+    <div class="ui form">
+        <form action="" method="post">
+            {% csrf_token %}
+            <h3 class="ui header" id="data_filter">数据筛选</h3>
+            <div class="field">
+                <div class="field">
+                    <select name="hosp-select[]" id="hosp-select" multiple=""
+                            class="ui fluid search dropdown">
+                        <option value="">医院全称</option>
+                        {% for hosp in hosp_list %}
+                            <option value="{{ hosp }}">{{ hosp }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <select name="rd-select[]" id="rd-select" multiple=""
+                            class="ui fluid search dropdown">
+                        <option value="">区域</option>
+                        {% for rd in rd_list %}
+                            <option value="{{ rd }}">{{ rd }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <select name="rsp-select[]" id="rsp-select" multiple=""
+                            class="ui fluid search dropdown">
+                        <option value="">负责代表</option>
+                        {% for rsp in rsp_list %}
+                            <option value="{{ rsp }}">{{ rsp }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <br>
+            <div class="ui buttons">
+                <!--<input class="ui button" type="reset" id="reset"/>-->
+                <!--<div class="or"></div>-->
+                <input class="ui blue button" type='button' id='AJAX_get' value="筛选"/>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+function submitForm(){
+//获取form表单对象
+var form = document.getElementById("myform");
+form.submit();//form表单提交
+
+}
+</script>
+<script>
+    $('.ui.fluid.search.dropdown')
+      .dropdown({ fullTextSearch: true });
+
+</script>
