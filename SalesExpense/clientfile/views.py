@@ -28,6 +28,36 @@ pd.set_option('display.width', 5000)
 
 SERIES_LIMIT = 10  # 所有画图需要限制的系列数
 
+D_SELECT = {
+    '省/自治区/直辖市': 'province-select[]',
+    '区域': 'rd-select[]',
+    '大区': 'rm-select[]',
+    '地区经理': 'dsm-select[]',
+    '负责代表': 'rsp-select[]',
+    '医院编码': 'xltid-select[]',
+    '医院全称': 'hosp-select[]',
+    '是否双call': 'dc-select[]',
+    '医院层级': 'hplevel-select[]',
+    '是否开户': 'hpaccess-select[]',
+    '所在科室': 'dept-select[]',
+    '职称': 'title-select[]',
+}
+
+D_FIELD = {
+    '省/自治区/直辖市': 'province',
+    '区域': 'rd',
+    '大区': 'rm',
+    '地区经理': 'dsm',
+    '负责代表': 'rsp',
+    '医院编码': 'xlt_id',
+    '医院全称': 'hospital',
+    '是否双call': 'dual_call',
+    '医院层级': 'hp_level',
+    '是否开户': 'hp_access',
+    '所在科室': 'dept',
+    '职称': 'title',
+}
+
 D_MAP = {
     "已开户": True,
     "未开户": False,
@@ -99,8 +129,8 @@ class ChartView(APIView):
 
 
 def get_chart(request, chart):
-    hosp_selected = request.POST.getlist('hosp-select[]')
-    df = get_df_clients(request.user)
+    context = get_context_from_form(request)
+    df = get_df_clients(request.user, context)
     if chart == 'scatter_client':
         df['客户姓名'] = df['区域']+'_'+df['大区']+'_'+df['地区经理']+'_'+df['负责代表']+'_'+df['客户姓名']
         df = df.loc[: , ['客户姓名', '月累计相关病人数', '当前月处方量']]
@@ -130,12 +160,24 @@ def get_chart(request, chart):
 
 
 def ajax_table(request, index):
-    df = get_df_clients(request.user)
-    table_id =request.GET['table_id']
+    context = get_context_from_form(request)
+    df = get_df_clients(request.user, context)
 
     df_client_n = pd.pivot_table(df, index=index, values='客户姓名', aggfunc='count')
-    df_client_n_cv= pd.pivot_table(df, index=index, columns='所在科室', values='客户姓名', aggfunc=len).loc[:, '心内科']
-    df_client_n_noaccess= pd.pivot_table(df, index=index, columns='是否开户', values='客户姓名', aggfunc=len).loc[:, '是']
+    if df[df['所在科室'] == '心内科'].shape[0] > 0:
+        df_client_n_cv = pd.pivot_table(df, index=index, columns='所在科室', values='客户姓名', aggfunc=len).loc[:, '心内科']
+
+    else:
+        df_client_n_cv = pd.pivot_table(df, index=index, columns='所在科室', values='客户姓名', aggfunc=len)
+        df_client_n_cv['心内科'] = 0
+        df_client_n_cv = df_client_n_cv.loc[:, ['心内科']]
+        print(df_client_n_cv)
+    if df[df['是否开户'] == '是'].shape[0] > 0:
+        df_client_n_noaccess = pd.pivot_table(df, index=index, columns='是否开户', values='客户姓名', aggfunc=len).loc[:, '是']
+    else:
+        df_client_n_noaccess = pd.pivot_table(df, index=index, columns='是否开户', values='客户姓名', aggfunc=len)
+        df_client_n_noaccess['是'] = 0
+        df_client_n_noaccess = df_client_n_noaccess.loc[:, ['是']]
     df_hosp_n = pd.pivot_table(df, index=index, values='医院全称', aggfunc=lambda x: len(x.unique()))
     df_monthly_patients = pd.pivot_table(df, index=index, values='月累计相关病人数', aggfunc=np.mean)
     df_combined = pd.concat([df_client_n,
@@ -157,7 +199,7 @@ def ajax_table(request, index):
     df_combined['客户数/医院'] = df_combined['客户档案数']/df_combined['医院数']
 
     table = df_combined.to_html(formatters=build_formatters_by_col(df_combined), classes='ui celled table',
-                                   table_id=table_id, escape=False)
+                                   table_id=context['table_id'], escape=False)
     return HttpResponse(table)
 
 
@@ -243,27 +285,26 @@ def import_excel(request):
                             context['record_n'] = df.shape[0]
                             return JsonResponse(context)
 
+
 @login_required()
 def analysis(request):
     if request.is_ajax():
-        hosp_selected = request.POST.getlist('hosp-select[]')
-        rsp_selected = request.POST.getlist('rsp-select[]')
+        context = get_context_from_form(request)
 
-        q = Q()
-        if len(hosp_selected) > 0:
-            q &= Q(hospital__in=hosp_selected)
-        if len(rsp_selected) > 0:
-            q &= Q(rsp__in=rsp_selected)
+        or_condiction = Q()
+        for key, value in D_FIELD.items():
+            if len(context[key]) > 0:
+                or_condiction.add(Q(**{"{}__in".format(value): context[key]}), Q.AND)
 
         if request.user.is_staff:
-            clients = Client.objects.filter(q)
+            clients = Client.objects.filter(or_condiction)
         else:
             staffs = Staff.objects.get(name=request.user).get_descendants(include_self=True)
             staff_list = [i.name for i in staffs]
 
             clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
                 rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
-            clients = clients.filter(q)
+            clients = clients.filter(or_condiction)
 
         clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
         context = {
@@ -282,14 +323,17 @@ def analysis(request):
             rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
 
     clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
-    context = {
-        'client_list': clients,
-        'rd_list': get_unique(clients, 'rd'),
-        'rm_list': get_unique(clients, 'rm'),
-        'dsm_list': get_unique(clients, 'dsm'),
-        'rsp_list': get_unique(clients, 'rsp'),
-        'hosp_list': get_unique(clients, 'hospital')
-    }
+
+    context = {}
+    context['field_list'] = {}
+    for key, value in D_FIELD.items():
+        context['field_list'] = dict(context['field_list'], **{key: value})
+    for key, value in context['field_list'].items():
+        context['field_list'][key] = {}
+        context['field_list'][key]['select'] = D_SELECT[key]
+        context['field_list'][key]['options'] = get_unique(clients, value)
+    context['client_list'] = clients
+
     return render(request, 'clientfile/analysis.html', context)
 
 
@@ -374,7 +418,7 @@ def dsm_auth(user, dsm_list):
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
-def get_df_clients(user):
+def get_df_clients(user, context=None):
     if user.is_staff:
         clients = Client.objects.all()
         df_clients = pd.DataFrame(list(clients.values()))
@@ -385,6 +429,14 @@ def get_df_clients(user):
         clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
             rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
         df_clients = pd.DataFrame(list(clients.values()))
+
+    if context is not None:
+        for key, value in D_FIELD.items():
+            if len(context[key]) > 0:
+                if key in ['是否双call', '是否开户']:
+                    context[key] = [D_MAP[x] if x in D_MAP else x for x in context[key]]
+                df_clients = df_clients[df_clients[value].isin(context[key])]
+
     if df_clients.empty is False:
         df_new = df_clients.reindex(columns=['rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',
                                              'hp_level', 'hp_access', 'name', 'dept', 'title', 'consulting_times',
@@ -454,8 +506,35 @@ def row_refined(matched):
 def get_unique(qs, field):
     unique_list = []
     for query in qs:
-        if getattr(query, field) not in unique_list:
-            unique_list.append(getattr(query, field))
+        str = getattr(query, field)
+        if str is True:
+            str = "是"
+        elif str is False:
+            str = "否"
+        if str not in unique_list:
+            unique_list.append(str)
     return unique_list
 
 
+def get_context_from_form(request, download_url=False):
+    context = {}
+    D_SELECT['table_id'] = 'table_id'
+    for key, value in D_SELECT.items():
+        if request.method == 'POST':
+            if value[-2:] == '[]':
+                selected = request.POST.getlist(value)
+            else:
+                selected = request.POST.get(value)
+        elif request.method == 'GET':
+            if value[-2:] == '[]':
+                if download_url is False:
+                    selected = request.GET.getlist(value)
+                else:
+                    selected = request.GET.getlist(value[:-2])
+            else:
+                if download_url is False:
+                    selected = request.GET.get(value)
+                else:
+                    selected = request.GET.get(value[:-2])
+        context[key] = selected
+    return context

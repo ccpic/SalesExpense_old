@@ -113,9 +113,18 @@ DSM客户档案管理
             data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
         });
         var data = {
+            "province-select": $("#province-select").val(),
             "rd-select": $("#rd-select").val(),
+            "rm-select": $("#rm-select").val(),
+            "dsm-select": $("#dsm-select").val(),
             "rsp-select": $("#rsp-select").val(),
+            "xltid-select": $("#xltid-select").val(),
             "hosp-select": $("#hosp-select").val(),
+            "dc-select": $("#dc-select").val(),
+            "hplevel-select": $("#hplevel-select").val(),
+            "hpaccess-select": $("#hpaccess-select").val(),
+            "dept-select": $("#dept-select").val(),
+            "title-select": $("#title-select").val()
         };
         $.ajax({
             // 请求的url
@@ -144,9 +153,20 @@ DSM客户档案管理
         });
 
         var data = {
+            "province-select": $("#province-select").val(),
             "rd-select": $("#rd-select").val(),
+            "rm-select": $("#rm-select").val(),
+            "dsm-select": $("#dsm-select").val(),
+            "rsp-select": $("#rsp-select").val(),
+            "xltid-select": $("#xltid-select").val(),
             "hosp-select": $("#hosp-select").val(),
+            "dc-select": $("#dc-select").val(),
+            "hplevel-select": $("#hplevel-select").val(),
+            "hpaccess-select": $("#hpaccess-select").val(),
+            "dept-select": $("#dept-select").val(),
+            "title-select": $("#title-select").val()
         };
+
         $(
             function () {
                 getData('treemap_rsp_hosp_client', '{% url 'clientfile:ajax_chart' 'treemap_rsp_hosp_client' %}')
@@ -197,6 +217,7 @@ DSM客户档案管理
             $.ajax({
                 type: "GET",
                 url: ajax_url,
+                data: data,
                 dataType: 'json',
                 success: function (ret) {
                     chart.clear();

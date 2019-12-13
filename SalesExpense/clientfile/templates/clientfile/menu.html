@@ -4,33 +4,17 @@
             {% csrf_token %}
             <h3 class="ui header" id="data_filter">数据筛选</h3>
             <div class="field">
+                {% for key, value in field_list.items %}
                 <div class="field">
-                    <select name="hosp-select[]" id="hosp-select" multiple=""
+                    <select name="{{ value.select }}" id="{{ value.select|slice:":-2" }}" multiple=""
                             class="ui fluid search dropdown">
-                        <option value="">医院全称</option>
-                        {% for hosp in hosp_list %}
-                            <option value="{{ hosp }}">{{ hosp }}</option>
+                        <option value="">{{ key }}</option>
+                        {% for item in value.options %}
+                            <option value="{{ item }}">{{ item }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="field">
-                    <select name="rd-select[]" id="rd-select" multiple=""
-                            class="ui fluid search dropdown">
-                        <option value="">区域</option>
-                        {% for rd in rd_list %}
-                            <option value="{{ rd }}">{{ rd }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="field">
-                    <select name="rsp-select[]" id="rsp-select" multiple=""
-                            class="ui fluid search dropdown">
-                        <option value="">负责代表</option>
-                        {% for rsp in rsp_list %}
-                            <option value="{{ rsp }}">{{ rsp }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                {% endfor %}
             </div>
             <br>
             <div class="ui buttons">

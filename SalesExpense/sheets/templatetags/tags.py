@@ -39,4 +39,15 @@ def times(number):
         return []
 
 
+@register.filter(name='select_id')
+def select_id(str):
+    try:
+        if str[-2:] == "[]":
+            return str[:-2]
+        else:
+            return  str
+    except:
+        return str
+
+
 
