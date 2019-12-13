@@ -25,7 +25,8 @@ DSM客户档案管理
         <div class="thirteen wide column">
                 <div class="ui pointing secondary menu">
                     <a class="item active" data-tab="client_cards"><i class="address card icon"></i>客户一览</a>
-                    <a class="item" data-tab="client_level"><i class="user md icon"></i>客户分层</a>
+                    <a class="item" data-tab="client_property"><i class="user md icon"></i>客户属性</a>
+                    <a class="item" data-tab="client_level"><i class="braille icon"></i>潜力分层</a>
                     <a class="item" data-tab="management_dsm"><i class="paperclip icon"></i>管理分析-地区经理</a>
                     <a class="item" data-tab="management_rsp"><i class="paperclip icon"></i>管理分析-代表</a>
                 </div>
@@ -51,6 +52,18 @@ DSM客户档案管理
                     <div class="ui divider"></div>
                     <div id="client_cards">
                     {% include 'clientfile/cards.html' %}
+                    </div>
+                </div>
+                <div class="ui tab segment" data-tab="client_property">
+                    <h3 class="ui header">
+                        <div class="content">
+                            科室分布
+                            <div class="sub header">分科室档案数</div>
+                        </div>
+                    </h3>
+                    <div class="ui divider"></div>
+                    <div class="ui container">
+                        <div id="pie_dept" style="width:1024px; height:600px;"></div>
                     </div>
                 </div>
                 <div class="ui tab segment" data-tab="client_level">
@@ -169,7 +182,8 @@ DSM客户档案管理
 
         $(
             function () {
-                getData('treemap_rsp_hosp_client', '{% url 'clientfile:ajax_chart' 'treemap_rsp_hosp_client' %}')
+                getData('pie_dept', '{% url 'clientfile:ajax_chart' 'pie_dept' %}');
+                getData('treemap_rsp_hosp_client', '{% url 'clientfile:ajax_chart' 'treemap_rsp_hosp_client' %}');
                 getData('bar_dsm', '{% url 'clientfile:ajax_chart' 'bar_dsm' %}');
                 getTable('dsm_summary', 'table_dsm', '{% url 'clientfile:ajax_table' '地区经理' %}');
                 getTable('rsp_summary', 'table_rsp', '{% url 'clientfile:ajax_table' '负责代表' %}');

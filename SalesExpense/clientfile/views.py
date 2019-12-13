@@ -141,6 +141,10 @@ def get_chart(request, chart):
         pivoted = pd.pivot_table(df, index='地区经理', values='客户姓名', aggfunc='count')
         pivoted.columns = ['客户档案数']
         c = bar(pivoted)
+    elif chart == 'pie_dept':
+        df = df['客户姓名'].groupby(df['所在科室']).count()
+        print(df)
+        c = pie_radius(df)
     elif chart == 'treemap_rsp_hosp_client':
         pivoted = pd.pivot_table(df, index=['负责代表', '医院全称', '客户姓名'], values='月累计相关病人数', aggfunc=sum)
         df = pivoted.reset_index()

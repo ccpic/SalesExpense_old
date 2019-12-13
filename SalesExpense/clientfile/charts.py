@@ -209,20 +209,27 @@ def stackarea100(df, datatype='ABS'):
 
 def pie_radius(df) -> Pie:
     if df.empty is False:
+        x_data = df.index.tolist()
+        y_data = df.tolist()
+        data_pair = [list(z) for z in zip(x_data, y_data)]
         pie = (
-            Pie()
+            Pie(init_opts=opts.InitOpts())
                 .add(
-                "",
-                [list(z) for z in zip(df.index, df.values)],
-                radius=["40%", "75%"],
+                series_name="所在科室",
+                data_pair=data_pair,
+                radius=["50%", "70%"],
+                label_opts=opts.LabelOpts(is_show=False, position="center"),
             )
-                .set_global_opts(
-                # title_opts=opts.TitleOpts(title="Pie-Radius"),
-                legend_opts=opts.LegendOpts(
-                    orient="vertical", pos_top="15%", pos_left="2%"
+                .set_global_opts(legend_opts=opts.LegendOpts(is_show=False),
+                                 toolbox_opts=opts.ToolboxOpts(is_show=True),
+                                 )
+                .set_series_opts(
+                tooltip_opts=opts.TooltipOpts(
+                    trigger="item", formatter="{a} <br/>{b}: {c} ({d}%)"
                 ),
+                label_opts=opts.LabelOpts(is_show=True,
+                                          formatter="{b}: {d}%"),
             )
-                .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {d}%"))
         )
     else:
         pie = (Pie())
@@ -502,7 +509,7 @@ def treemap(d, series_name):
             .add(series_name, d)
             .set_series_opts(
             label_opts=opts.LabelOpts(position="inside",
-                                      font_size=10,
+                                      font_size=11,
                                       font_weight='lighter',
                                       formatter='{b}\n{c}'
                                       ),
