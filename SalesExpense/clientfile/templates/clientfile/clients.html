@@ -89,6 +89,9 @@ $(document).ready(function () {
         $('#table').DataTable({
             pageLength: 25,
             autoWidth: false,
+            fixedHeader: {
+                headerOffset: 50
+            },
             language: {
                 search: "在档案中搜索:",
                 sLengthMenu: "每页显示 _MENU_ 条档案"
@@ -122,6 +125,9 @@ $(document).ready(function () {
                                 $('#table').DataTable({
                                     pageLength: 25,
                                     autoWidth: false,
+                                    fixedHeader: {
+                                        headerOffset: 50
+                                    },
                                     language: {
                                         search: "在档案中搜索:",
                                         sLengthMenu: "每页显示 _MENU_ 条档案"
