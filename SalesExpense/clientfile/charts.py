@@ -1,4 +1,4 @@
-from pyecharts.charts import Line, Pie, Bar, Geo, Scatter, TreeMap
+from pyecharts.charts import Line, Pie, Bar, Geo, Scatter, TreeMap, Page
 from pyecharts import options as opts
 from pyecharts.commons.utils import JsCode
 import numpy as np
@@ -236,7 +236,7 @@ def pie_radius(df) -> Pie:
     return pie
 
 
-def bar(df, datatype='ABS') -> Bar:
+def bar(df, datatype='ABS', show_label=False) -> Bar:
     axislabel_format = '{value}'
     if datatype in ['SHARE', 'GR']:
         df = df.multiply(100).round(2)
@@ -249,7 +249,7 @@ def bar(df, datatype='ABS') -> Bar:
         for i, item in enumerate(df.columns):
             bar.add_yaxis(item,
                           df[item].values.tolist(),
-                          label_opts=opts.LabelOpts(is_show=False),
+                          label_opts=opts.LabelOpts(is_show=show_label),
                           )
         bar.set_global_opts(
             # title_opts=opts.TitleOpts(title='Trend', pos_left='center'),

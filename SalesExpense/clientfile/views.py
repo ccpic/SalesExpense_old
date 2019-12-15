@@ -141,10 +141,50 @@ def get_chart(request, chart):
         pivoted = pd.pivot_table(df, index='地区经理', values='客户姓名', aggfunc='count')
         pivoted.columns = ['客户档案数']
         c = bar(pivoted)
+    elif chart == 'bar_dept_potential':
+        df_count = df['客户姓名'].groupby(df['所在科室']).count()
+        df_count.sort_values(ascending=False,  inplace=True)
+        pivoted = pd.pivot_table(df, index='所在科室', values='月累计相关病人数', aggfunc=np.mean)
+        pivoted.columns = ['平均月累计相关病人数']
+        pivoted = pivoted.round(1).reindex(df_count.index)
+        c = bar(pivoted, show_label=True)
+    elif chart == 'bar_hpaccess_potential':
+        df_count = df['客户姓名'].groupby(df['是否开户']).count()
+        df_count.sort_values(ascending=False,  inplace=True)
+        pivoted = pd.pivot_table(df, index='是否开户', values='月累计相关病人数', aggfunc=np.mean)
+        pivoted.columns = ['平均月累计相关病人数']
+        pivoted = pivoted.round(1).reindex(df_count.index)
+        c = bar(pivoted, show_label=True)
+    elif chart == 'bar_hplevel_potential':
+        df_count = df['客户姓名'].groupby(df['医院层级']).count()
+        df_count = df_count.reindex(['A', 'B', 'C', 'D'])
+        pivoted = pd.pivot_table(df, index='医院层级', values='月累计相关病人数', aggfunc=np.mean)
+        pivoted.columns = ['平均月累计相关病人数']
+        pivoted = pivoted.round(1).reindex(df_count.index)
+        c = bar(pivoted, show_label=True)
+    elif chart == 'bar_title_potential':
+        df_count = df['客户姓名'].groupby(df['职称']).count()
+        df_count = df_count.reindex(['主任医师', '副主任医师', '主治医师', '住院医师'])
+        pivoted = pd.pivot_table(df, index='职称', values='月累计相关病人数', aggfunc=np.mean)
+        pivoted.columns = ['平均月累计相关病人数']
+        pivoted = pivoted.round(1).reindex(df_count.index)
+        c = bar(pivoted, show_label=True)
     elif chart == 'pie_dept':
-        df = df['客户姓名'].groupby(df['所在科室']).count()
-        print(df)
-        c = pie_radius(df)
+        df_count = df['客户姓名'].groupby(df['所在科室']).count()
+        df_count.sort_values(ascending=False, inplace=True)
+        c = pie_radius(df_count)
+    elif chart == 'pie_hpaccess':
+        df_count = df['客户姓名'].groupby(df['是否开户']).count()
+        df_count.sort_values(ascending=False, inplace=True)
+        c = pie_radius(df_count)
+    elif chart == 'pie_hplevel':
+        df_count = df['客户姓名'].groupby(df['医院层级']).count()
+        df_count = df_count.reindex(['A', 'B', 'C', 'D'])
+        c = pie_radius(df_count)
+    elif chart == 'pie_title':
+        df_count = df['客户姓名'].groupby(df['职称']).count()
+        df_count = df_count.reindex(['主任医师', '副主任医师', '主治医师', '住院医师'])
+        c = pie_radius(df_count)
     elif chart == 'treemap_rsp_hosp_client':
         pivoted = pd.pivot_table(df, index=['负责代表', '医院全称', '客户姓名'], values='月累计相关病人数', aggfunc=sum)
         df = pivoted.reset_index()

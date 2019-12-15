@@ -23,92 +23,167 @@ DSM客户档案管理
         </div>
 
         <div class="thirteen wide column">
-                <div class="ui pointing secondary menu">
-                    <a class="item active" data-tab="client_cards"><i class="address card icon"></i>客户一览</a>
-                    <a class="item" data-tab="client_property"><i class="user md icon"></i>客户属性</a>
-                    <a class="item" data-tab="client_level"><i class="braille icon"></i>潜力分层</a>
-                    <a class="item" data-tab="management_dsm"><i class="paperclip icon"></i>管理分析-地区经理</a>
-                    <a class="item" data-tab="management_rsp"><i class="paperclip icon"></i>管理分析-代表</a>
-                </div>
-                <div class="ui tab segment active" data-tab="client_cards">
+            <div class="ui pointing secondary menu">
+                <a class="item active" data-tab="client_cards"><i class="address card icon"></i>客户一览</a>
+                <a class="item" data-tab="client_property"><i class="user md icon"></i>客户属性</a>
+                <a class="item" data-tab="client_level"><i class="braille icon"></i>潜力分层</a>
+                <a class="item" data-tab="management_dsm"><i class="paperclip icon"></i>管理分析-地区经理</a>
+                <a class="item" data-tab="management_rsp"><i class="paperclip icon"></i>管理分析-代表</a>
+            </div>
+            <div class="ui tab segment active" data-tab="client_cards">
 
-                    <h3 class="ui header">
-                        <div class="content">
-                            客户一览
-                            <div class="sub header">信息卡（按潜力排序）</div>
-                        </div>
-                    </h3>
-        <!--            按-->
-        <!--            <div class="ui selection dropdown">-->
-        <!--              <input type="hidden" name="gender">-->
-        <!--              <i class="dropdown icon"></i>-->
-        <!--              <div class="default text">Gender</div>-->
-        <!--              <div class="menu">-->
-        <!--                <div class="item" data-value="1">Male</div>-->
-        <!--                <div class="item" data-value="0">Female</div>-->
-        <!--              </div>-->
-        <!--            </div>-->
-        <!--            排序-->
-                    <div class="ui divider"></div>
-                    <div id="client_cards">
+                <h3 class="ui header">
+                    <div class="content">
+                        客户一览
+                        <div class="sub header">信息卡（按潜力排序）</div>
+                    </div>
+                </h3>
+                <!--            按-->
+                <!--            <div class="ui selection dropdown">-->
+                <!--              <input type="hidden" name="gender">-->
+                <!--              <i class="dropdown icon"></i>-->
+                <!--              <div class="default text">Gender</div>-->
+                <!--              <div class="menu">-->
+                <!--                <div class="item" data-value="1">Male</div>-->
+                <!--                <div class="item" data-value="0">Female</div>-->
+                <!--              </div>-->
+                <!--            </div>-->
+                <!--            排序-->
+                <div class="ui divider"></div>
+                <div id="client_cards">
                     {% include 'clientfile/cards.html' %}
+                </div>
+            </div>
+            <div class="ui tab segment" data-tab="client_property">
+                <h3 class="ui header">
+                    <div class="content">
+                        科室
+                        <div class="sub header">科室档案分布&潜力</div>
+                    </div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui grid">
+                    <div class="two column row">
+                        <div class="column">
+                            <div class="ui container">
+                                <div id="pie_dept" style="width:600px; height:600px;"></div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="ui container">
+                                <div id="bar_dept_potential" style="width:600px; height:600px;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="ui tab segment" data-tab="client_property">
-                    <h3 class="ui header">
-                        <div class="content">
-                            科室分布
-                            <div class="sub header">分科室档案数</div>
+                <h3 class="ui header">
+                    <div class="content">
+                        开户进度
+                        <div class="sub header">开户/未开户医院档案分布&潜力</div>
+                    </div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui grid">
+                    <div class="two column row">
+                        <div class="column">
+                            <div class="ui container">
+                                <div id="pie_hpaccess" style="width:600px; height:600px;"></div>
+                            </div>
                         </div>
-                    </h3>
-                    <div class="ui divider"></div>
-                    <div class="ui container">
-                        <div id="pie_dept" style="width:1024px; height:600px;"></div>
+                        <div class="column">
+                            <div class="ui container">
+                                <div id="bar_hpaccess_potential" style="width:600px; height:600px;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="ui tab segment" data-tab="client_level">
-                    <h3 class="ui header">
-                        <div class="content">
-                            客户潜力分布
-                            <div class="sub header">月相关病人数</div>
+                <h3 class="ui header">
+                    <div class="content">
+                        医院层级
+                        <div class="sub header">医院层级档案分布&潜力</div>
+                    </div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui grid">
+                    <div class="two column row">
+                        <div class="column">
+                            <div class="ui container">
+                                <div id="pie_hplevel" style="width:600px; height:600px;"></div>
+                            </div>
                         </div>
-                    </h3>
-                    <div class="ui divider"></div>
-                    <div class="ui container">
-                        <div id="treemap_rsp_hosp_client" style="width:1024px; height:600px;"></div>
+                        <div class="column">
+                            <div class="ui container">
+                                <div id="bar_hplevel_potential" style="width:600px; height:600px;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="ui tab segment" data-tab="management_dsm">
-                    <h3 class="ui header">
-                        <div class="content">
-                            地区经理
-                            <div class="sub header">档案数</div>
-                        </div>
-                    </h3>
-                    <div class="ui divider"></div>
-                    <div class="ui container">
-                        <div id="bar_dsm" style="width:1024px; height:600px;"></div>
+                <h3 class="ui header">
+                    <div class="content">
+                        职称
+                        <div class="sub header">职称档案分布&潜力</div>
                     </div>
-                    <h3 class="ui header">
-                        <div class="content">
-                            地区经理
-                            <div class="sub header">档案分析</div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui grid">
+                    <div class="two column row">
+                        <div class="column">
+                            <div class="ui container">
+                                <div id="pie_title" style="width:600px; height:600px;"></div>
+                            </div>
                         </div>
-                    </h3>
-                    <div class="ui divider"></div>
-                    <div class="ui container" id='dsm_summary' style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+                        <div class="column">
+                            <div class="ui container">
+                                <div id="bar_title_potential" style="width:600px; height:600px;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="ui tab segment" data-tab="management_rsp">
-                    <h3 class="ui header">
-                        <div class="content">
-                            代表
-                            <div class="sub header">档案分析</div>
-                        </div>
-                    </h3>
-                    <div class="ui divider"></div>
-                    <div class="ui container" id='rsp_summary' style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+            </div>
+            <div class="ui tab segment" data-tab="client_level">
+                <h3 class="ui header">
+                    <div class="content">
+                        客户潜力分布
+                        <div class="sub header">月相关病人数</div>
                     </div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui container">
+                    <div id="treemap_rsp_hosp_client" style="width:1024px; height:600px;"></div>
+                </div>
+            </div>
+            <div class="ui tab segment" data-tab="management_dsm">
+<!--                <h3 class="ui header">-->
+<!--                    <div class="content">-->
+<!--                        地区经理-->
+<!--                        <div class="sub header">档案数</div>-->
+<!--                    </div>-->
+<!--                </h3>-->
+<!--                <div class="ui divider"></div>-->
+<!--                <div class="ui container">-->
+<!--                    <div id="bar_dsm" style="width:1024px; height:600px;"></div>-->
+<!--                </div>-->
+                <h3 class="ui header">
+                    <div class="content">
+                        地区经理
+                        <div class="sub header">档案分析</div>
+                    </div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui container" id='dsm_summary'
+                     style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+                </div>
+            </div>
+            <div class="ui tab segment" data-tab="management_rsp">
+                <h3 class="ui header">
+                    <div class="content">
+                        代表
+                        <div class="sub header">档案分析</div>
+                    </div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui container" id='rsp_summary'
+                     style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
                 </div>
             </div>
         </div>
@@ -183,8 +258,15 @@ DSM客户档案管理
         $(
             function () {
                 getData('pie_dept', '{% url 'clientfile:ajax_chart' 'pie_dept' %}');
+                getData('bar_dept_potential', '{% url 'clientfile:ajax_chart' 'bar_dept_potential' %}');
+                getData('pie_hpaccess', '{% url 'clientfile:ajax_chart' 'pie_hpaccess' %}');
+                getData('bar_hpaccess_potential', '{% url 'clientfile:ajax_chart' 'bar_hpaccess_potential' %}');
+                getData('pie_hplevel', '{% url 'clientfile:ajax_chart' 'pie_hplevel' %}');
+                getData('bar_hplevel_potential', '{% url 'clientfile:ajax_chart' 'bar_hplevel_potential' %}');
+                getData('pie_title', '{% url 'clientfile:ajax_chart' 'pie_title' %}');
+                getData('bar_title_potential', '{% url 'clientfile:ajax_chart' 'bar_title_potential' %}');
                 getData('treemap_rsp_hosp_client', '{% url 'clientfile:ajax_chart' 'treemap_rsp_hosp_client' %}');
-                getData('bar_dsm', '{% url 'clientfile:ajax_chart' 'bar_dsm' %}');
+                // getData('bar_dsm', '{% url 'clientfile:ajax_chart' 'bar_dsm' %}');
                 getTable('dsm_summary', 'table_dsm', '{% url 'clientfile:ajax_table' '地区经理' %}');
                 getTable('rsp_summary', 'table_rsp', '{% url 'clientfile:ajax_table' '负责代表' %}');
             }
