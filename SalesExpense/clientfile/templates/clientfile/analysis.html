@@ -26,7 +26,7 @@ DSM客户档案管理
             <div class="ui pointing secondary menu">
                 <a class="item active" data-tab="client_cards"><i class="address card icon"></i>客户一览</a>
                 <a class="item" data-tab="client_property"><i class="user md icon"></i>客户属性</a>
-                <a class="item" data-tab="client_level"><i class="braille icon"></i>潜力分层</a>
+                <a class="item" data-tab="client_level"><i class="braille icon"></i>潜力分布</a>
                 <a class="item" data-tab="management_dsm"><i class="paperclip icon"></i>管理分析-地区经理</a>
                 <a class="item" data-tab="management_rsp"><i class="paperclip icon"></i>管理分析-代表</a>
             </div>
@@ -143,7 +143,17 @@ DSM客户档案管理
             <div class="ui tab segment" data-tab="client_level">
                 <h3 class="ui header">
                     <div class="content">
-                        客户潜力分布
+                        客户潜力分级
+                        <div class="sub header">客户潜力高中低比例</div>
+                    </div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui container">
+                    <div id="pie_potential_level" style="width:1024px; height:600px;"></div>
+                </div>
+                <h3 class="ui header">
+                    <div class="content">
+                        代表-客户潜力分布
                         <div class="sub header">月相关病人数</div>
                     </div>
                 </h3>
@@ -257,6 +267,7 @@ DSM客户档案管理
 
         $(
             function () {
+                getData('pie_potential_level', '{% url 'clientfile:ajax_chart' 'pie_potential_level' %}');
                 getData('pie_dept', '{% url 'clientfile:ajax_chart' 'pie_dept' %}');
                 getData('bar_dept_potential', '{% url 'clientfile:ajax_chart' 'bar_dept_potential' %}');
                 getData('pie_hpaccess', '{% url 'clientfile:ajax_chart' 'pie_hpaccess' %}');
@@ -292,9 +303,6 @@ DSM客户档案管理
                             order: [[1, "desc"]],
                             pageLength: 25,
                             autoWidth: false,
-                            fixedHeader: {
-                                headerOffset: 50
-                            },
                             language: {
                                 search: "在档案中搜索:",
                                 sLengthMenu: "每页显示 _MENU_ 条档案"

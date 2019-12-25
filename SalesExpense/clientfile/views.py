@@ -185,6 +185,10 @@ def get_chart(request, chart):
         df_count = df['客户姓名'].groupby(df['职称']).count()
         df_count = df_count.reindex(['主任医师', '副主任医师', '主治医师', '住院医师'])
         c = pie_radius(df_count)
+    elif chart == 'pie_potential_level':
+        df_count = df['客户姓名'].groupby(df['潜力级别']).count()
+        df_count = df_count.reindex(['H', 'M', 'L'])
+        c = pie_radius(df_count)
     elif chart == 'treemap_rsp_hosp_client':
         pivoted = pd.pivot_table(df, index=['负责代表', '医院全称', '客户姓名'], values='月累计相关病人数', aggfunc=sum)
         df = pivoted.reset_index()
@@ -403,9 +407,9 @@ def validate(df):
         Column('客户姓名', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), IsDistinctValidation()]),
         Column('所在科室', [InListValidation(list_dept)]),
         Column('职称', [InListValidation(list_title)]),
-        Column('月出诊次数（半天计）', [CanConvertValidation(int), InRangeValidation(0, 62)]),
+        Column('月出诊次数（半天计）', [CanConvertValidation(int), InRangeValidation(0, 63)]),
         Column('每半天\n门诊量', [CanConvertValidation(int), InRangeValidation(0, )]),
-        Column('相关病人\n比例(%)\n建议比例：40%-80%', [CanConvertValidation(int), InRangeValidation(0, 100)]),
+        Column('相关病人\n比例(%)\n建议比例：40%-80%', [CanConvertValidation(int), InRangeValidation(0, 101)]),
         Column('备注')
     ])
     errors = schema.validate(df.loc[:, COL])
