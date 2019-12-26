@@ -342,6 +342,8 @@ def analysis(request):
         or_condiction = Q()
         for key, value in D_FIELD.items():
             if len(context[key]) > 0:
+                if key in ['是否双call', '是否开户']:
+                    context[key] = [D_MAP[x] if x in D_MAP else x for x in context[key]]
                 or_condiction.add(Q(**{"{}__in".format(value): context[key]}), Q.AND)
 
         if request.user.is_staff:
