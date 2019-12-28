@@ -448,7 +448,7 @@ def analysis(request):
     if request.is_ajax():
         context = get_context_from_form(request)
 
-        clients = get_clients(request.suer, context, '')
+        clients = get_clients(request.user, context)
         clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
         context = {
             'client_list': clients,
