@@ -236,7 +236,7 @@ def pie_radius(df) -> Pie:
     return pie
 
 
-def bar(df, datatype='ABS', show_label=False) -> Bar:
+def bar(df, datatype='ABS', show_label=False, label_rotate=90) -> Bar:
     axislabel_format = '{value}'
     if datatype in ['SHARE', 'GR']:
         df = df.multiply(100).round(2)
@@ -260,7 +260,7 @@ def bar(df, datatype='ABS', show_label=False) -> Bar:
                                           ),
             xaxis_opts=opts.AxisOpts(type_='category',
                                      boundary_gap=True,
-                                     axislabel_opts=opts.LabelOpts(rotate=90),
+                                     axislabel_opts=opts.LabelOpts(rotate=label_rotate),
                                      splitline_opts=opts.SplitLineOpts(is_show=False,
                                                                        linestyle_opts=opts.LineStyleOpts(
                                                                            type_='dotted',

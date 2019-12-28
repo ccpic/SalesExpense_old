@@ -95,6 +95,7 @@ class Client(models.Model):
         else:
             return 3
 
+
     # def favor_level(self):
     #     if self.monthly_prescription <= 20:
     #         return 1

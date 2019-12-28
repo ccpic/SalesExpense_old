@@ -18,7 +18,6 @@ from pandas_schema import Column, Schema
 from pandas_schema.validation import LeadingWhitespaceValidation, TrailingWhitespaceValidation, CanConvertValidation, \
     MatchesPatternValidation, InRangeValidation, InListValidation, CustomElementValidation, IsDistinctValidation
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-import operator
 
 try:
     from io import BytesIO as IO  # for modern python
@@ -205,6 +204,11 @@ def get_chart(request, chart):
         df_count = df['客户姓名'].groupby(df['潜力级别']).count()
         df_count = df_count.reindex(['H', 'M', 'L'])
         c = pie_radius(df_count)
+    elif chart == 'bar_line_potential_dist':
+        df['潜力区间'] = pd.cut(df['月累计相关病人数'], 20).astype(str)
+        df_count = df['潜力区间'].groupby(df['潜力区间']).count()
+        df_sorted = df_count[sorted(df_count.index, key=lambda x: float(x.split(", ")[0][1:]))].to_frame()
+        c = bar(df_sorted, show_label=True, label_rotate=30)
     elif chart == 'treemap_rsp_hosp_client':
         pivoted = pd.pivot_table(df, index=['负责代表', '医院全称', '客户姓名'], values='月累计相关病人数', aggfunc=sum)
         df = pivoted.reset_index()

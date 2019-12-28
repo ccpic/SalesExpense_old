@@ -144,12 +144,22 @@ DSM客户档案管理
                 <h3 class="ui header">
                     <div class="content">
                         客户潜力分级
-                        <div class="sub header">客户潜力高中低比例</div>
+                        <div class="sub header">潜力高中低比例</div>
                     </div>
                 </h3>
                 <div class="ui divider"></div>
                 <div class="ui container">
                     <div id="pie_potential_level" style="width:1024px; height:600px;"></div>
+                </div>
+                <h3 class="ui header">
+                    <div class="content">
+                        客户潜力分布
+                        <div class="sub header">二十分位潜力区间分布</div>
+                    </div>
+                </h3>
+                <div class="ui divider"></div>
+                <div class="ui container">
+                    <div id="bar_line_potential_dist" style="width:1024px; height:600px;"></div>
                 </div>
                 <h3 class="ui header">
                     <div class="content">
@@ -267,6 +277,7 @@ DSM客户档案管理
 
         $(
             function () {
+                getData('bar_line_potential_dist', '{% url 'clientfile:ajax_chart' 'bar_line_potential_dist' %}');
                 getData('pie_potential_level', '{% url 'clientfile:ajax_chart' 'pie_potential_level' %}');
                 getData('pie_dept', '{% url 'clientfile:ajax_chart' 'pie_dept' %}');
                 getData('bar_dept_potential', '{% url 'clientfile:ajax_chart' 'bar_dept_potential' %}');
