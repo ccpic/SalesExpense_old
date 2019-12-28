@@ -346,6 +346,12 @@ def clients(request):
             clients = paginator.page(paginator.num_pages)
         data = []
         for item in clients:
+            if item.potential_level() == 1:
+                potential_level = 'L'
+            elif item.potential_level() == 2:
+                potential_level = 'M'
+            elif item.potential_level() == 3:
+                potential_level = 'H'
             row = {"rd": item.rd,
                    "rm": item.rm,
                    "dsm": item.dsm,
@@ -364,14 +370,13 @@ def clients(request):
                    "target_prop": "{:.0%}".format(item.target_prop / 100),
                    "note": item.note,
                    "monthly_target_patients": item.monthly_patients(),
-                   'potential_level': item.potential_level(),
+                   'potential_level': potential_level,
                    }
             data.append(row)
         dataTable['iTotalRecords'] = result_length  # 数据总条数
         dataTable['sEcho'] = sEcho + 1
         dataTable['iTotalDisplayRecords'] = result_length  # 显示的条数
         dataTable['aaData'] = data
-        dataTable['record_n'] = 1
 
         return HttpResponse(json.dumps(dataTable, ensure_ascii=False))
 
@@ -445,31 +450,35 @@ def import_excel(request):
 
 @login_required()
 def analysis(request):
-    if request.is_ajax():
-        context = get_context_from_form(request)
-
-        clients = get_clients(request.user, context)
-        clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
-        context = {
-            'client_list': clients,
-        }
-
-        return render(request, 'clientfile/cards.html', context)
-
-    clients = get_clients(request.user)
+    DISPLAY_LENGTH = 20
+    context = get_context_from_form(request)
+    clients = get_clients(request.user, context)
     clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
-
-    context = {}
-    context['field_list'] = {}
-    for key, value in D_FIELD.items():
-        context['field_list'] = dict(context['field_list'], **{key: value})
-    for key, value in context['field_list'].items():
-        context['field_list'][key] = {}
-        context['field_list'][key]['select'] = D_SELECT[key]
-        context['field_list'][key]['options'] = get_unique(clients, value)
-    context['client_list'] = clients
-
-    return render(request, 'clientfile/analysis.html', context)
+    paginator = Paginator(clients, DISPLAY_LENGTH)
+    page = request.POST.get('page')
+    try:
+        rows = paginator.page(page)
+    except PageNotAnInteger:
+        rows = paginator.page(1)
+    except EmptyPage:
+        rows = paginator.page(paginator.num_pages)
+    context = {
+        'client_list': rows,
+        'num_pages': paginator.num_pages,
+        'record_n': paginator.count,
+        'display_length': DISPLAY_LENGTH,
+    }
+    if request.is_ajax():
+        return render(request, 'clientfile/cards.html', context)
+    else:
+        context['field_list'] = {}
+        for key, value in D_FIELD.items():
+            context['field_list'] = dict(context['field_list'], **{key: value})
+        for key, value in context['field_list'].items():
+            context['field_list'][key] = {}
+            context['field_list'][key]['select'] = D_SELECT[key]
+            context['field_list'][key]['options'] = get_unique(clients, value)
+        return render(request, 'clientfile/analysis.html', context)
 
 
 def validate(df):

@@ -89,11 +89,11 @@ class Client(models.Model):
 
     def potential_level(self):
         if self.monthly_patients() < 80:
-            return 'L'
+            return 1
         elif self.monthly_patients() < 200:
-            return 'M'
+            return 2
         else:
-            return 'H'
+            return 3
 
     # def favor_level(self):
     #     if self.monthly_prescription <= 20:

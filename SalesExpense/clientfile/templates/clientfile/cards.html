@@ -3,7 +3,6 @@
 
 {% if client_list %}
 <div class="ui five cards">
-    {% paginate 15 client_list %}
     {% for client in client_list %}
     <div class="card">
         <div class="content">
@@ -53,40 +52,42 @@
         </div>
     </div>
     {% endfor %}
-    <div class="ui hidden divider"></div>
-    {% get_pages %}
-    <div class="ui pagination menu">
-        {% if pages.paginated %}
-        {% show_current_number as current_page_number %}
-
-        <a class="item" href="{{ pages.first.path }}">&lt;&lt;</a>
-
-        {% if current_page_number|add:'-4' > 1 %}
-        <a class="item" href="?page={{ current_page_number|add:'-5' }}">&hellip;</a>
-        {% endif %}
+</div>
+<div class="ui hidden divider"></div>
 
 
-        {% for n in pages|length|times %}
-        {% if n == current_page_number %}
-        <span class="active item" href="?page={{ n }}">{{ n }}</span>
-        {% elif n > current_page_number|add:'-5' and n < current_page_number|add:'5' %}
-        <a class="item" href="?page={{ n }}">{{ n }}</a>
-        {% endif %}
-        {% endfor %}
+<div class="ui pagination menu">
+    <a class="item" onclick="getAjaxData(1)" href="javascript:void(0)">&lt;&lt;</a>
+
+    {% if client_list.number|add:'-4' > 1 %}
+    <a class="item" onclick="getAjaxData({{ client_list.number|add:'-5' }})"  href="javascript:void(0)">&hellip;</a>
+    {% endif %}
 
 
-        {% if pages|length > current_page_number|add:'4' %}
-        <a class="item" href="?page={{ current_page_number|add:'5' }}">&hellip;</a>
-        {% endif %}
+    {% for n in num_pages|times %}
+    {% if n == client_list.number %}
+    <span class="active item" onclick="getAjaxData({{ n }})" href="javascript:void(0)">{{ n }}</span>
+    {% elif n > client_list.number|add:'-5' and n < client_list.number|add:'5' %}
+    <a class="item" onclick="getAjaxData({{ n }})" href="javascript:void(0)">{{ n }}</a>
+    {% endif %}
+    {% endfor %}
 
-        <a class="item" href="{{ pages.last.path }}">&gt;&gt;</a>
-        {% endif %}
-    </div>
-    <div class="ui top right attached label">                    <span>&nbsp;&nbsp;&nbsp;&nbsp;当前显示第
-        {{ pages.current_start_index }}-{{ pages.current_end_index }} of {{ pages.total_count }}条档案
-        </span></div>
+
+    {% if num_pages > client_list.number|add:'4' %}
+    <a class="item" onclick="getAjaxData({{ client_list.number|add:'5' }})" href="javascript:void(0)">&hellip;</a>
+    {% endif %}
+
+    <a class="item" onclick="getAjaxData({{ num_pages }})" href="javascript:void(0)">&gt;&gt;</a>
+
+</div>
+
+<div class="ui top right attached label">
+    <span>&nbsp;&nbsp;当前显示第
+    {{ client_list.start_index }}-{{ client_list.end_index }} of {{ record_n }}条档案
+    </span>
 </div>
 {% endif %}
+
 
 <script>
     $(document).ready(function(){
@@ -94,3 +95,34 @@
     });
 
 </script>
+
+<script type="text/javascript">
+    function getAjaxData(page){
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        var data = {
+            "province-select": $("#province-select").val(),
+            "rd-select": $("#rd-select").val(),
+            "rm-select": $("#rm-select").val(),
+            "dsm-select": $("#dsm-select").val(),
+            "rsp-select": $("#rsp-select").val(),
+            "xltid-select": $("#xltid-select").val(),
+            "hosp-select": $("#hosp-select").val(),
+            "dc-select": $("#dc-select").val(),
+            "hplevel-select": $("#hplevel-select").val(),
+            "hpaccess-select": $("#hpaccess-select").val(),
+            "dept-select": $("#dept-select").val(),
+            "title-select": $("#title-select").val(),
+            "page":page
+        };
+        $.ajax({
+            type:"POST",
+            url:'{% url 'clientfile:analysis' %}',
+            data:data,
+            success:function(ret){
+                $('#client_cards').html(ret);
+            }
+        })
+    }
+ </script>

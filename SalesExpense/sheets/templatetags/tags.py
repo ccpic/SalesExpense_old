@@ -33,6 +33,7 @@ def multiply(value, arg):
 
 @register.filter(name='times')
 def times(number):
+    print(number)
     try:
         return range(1, number+1)
     except:
