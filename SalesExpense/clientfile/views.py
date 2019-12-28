@@ -17,6 +17,8 @@ import re
 from pandas_schema import Column, Schema
 from pandas_schema.validation import LeadingWhitespaceValidation, TrailingWhitespaceValidation, CanConvertValidation, \
     MatchesPatternValidation, InRangeValidation, InListValidation, CustomElementValidation, IsDistinctValidation
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+import operator
 
 try:
     from io import BytesIO as IO  # for modern python
@@ -27,6 +29,20 @@ pd.set_option('display.max_columns', 5000)
 pd.set_option('display.width', 5000)
 
 SERIES_LIMIT = 10  # 所有画图需要限制的系列数
+
+D_SEARCH_FIELD = {
+    '省/自治区/直辖市': 'province',
+    '区域': 'rd',
+    '大区': 'rm',
+    '地区经理': 'dsm',
+    '负责代表': 'rsp',
+    '医院全称': 'hospital',
+    '医院层级': 'hp_level',
+    '客户姓名': 'name',
+    '所在科室': 'dept',
+    '职称': 'title',
+    '备注': 'note'
+}
 
 D_SELECT = {
     '省/自治区/直辖市': 'province-select[]',
@@ -253,14 +269,111 @@ def ajax_table(request, index):
 
 @login_required()
 def clients(request):
-    df = get_df_clients(request.user)
-    clients = df_to_table(df, ['医院编码', '是否双call', '省/自治区/直辖市'])
-    record_n = df.shape[0]
-    context = {
-        'table': clients,
-        'record_n': record_n,
-    }
-    return render(request, 'clientfile/clients.html', context)
+    if request.method == 'GET':
+        record_n = get_clients(request.user).count
+        context = {'record_n': record_n}
+        return render(request, 'clientfile/clients.html', context)
+    else:
+        # 查询常数设置
+        ORDER_DICT = {
+            0: "rd",
+            1: "rm",
+            2: "dsm",
+            3: "rsp",
+            4: "hospital",
+            5: "hp_level",
+            6: "name",
+            7: "dept",
+            8: "title",
+            9: "consulting_times",
+            10: "patients_half_day",
+            11: "target_prop",
+            12: "note",
+            13: "monthly_target_patients",
+            14: 'potential_level',
+        }
+
+        dataTable = {}
+        aodata = json.loads(request.POST.get("aodata"))
+
+        for item in aodata:
+            if item['name'] == "sEcho":
+                sEcho = int(item['value'])  # 客户端发送的标识
+            if item['name'] == "iDisplayStart":
+                start = int(item['value'])  # 起始索引
+            if item['name'] == "iDisplayLength":
+                length = int(item['value'])  # 每页显示的行数
+            if item['name'] == "iSortCol_0":
+                sort_column = int(item['value'])  # 按第几列排序
+            if item['name'] == "sSortDir_0":
+                sort_order = item['value'].lower()  # 正序还是反序
+            if item['name'] == "sSearch":
+                search_key = item['value']  # 正序还是反序
+
+        # 根据前端返回筛选参数筛选
+        context = get_context_from_form(request)
+
+        # 根据用户权限，前端参数，搜索关键字返回client objects
+        clients = get_clients(request.user, context, search_key)
+
+        # 排序
+        result_length = clients.count()
+        if sort_column < 13:
+            if sort_order == 'asc':
+                clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]))
+            elif sort_order == 'desc':
+                clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]), reverse=True)
+        elif sort_column == 13:
+            if sort_order == 'asc':
+                clients = sorted(clients, key=lambda a: a.monthly_patients())
+            elif sort_order == 'desc':
+                clients = sorted(clients, key=lambda a: a.monthly_patients(), reverse=True)
+        elif sort_column == 14:
+            if sort_order == 'asc':
+                clients = sorted(clients, key=lambda a: a.potential_level())
+            elif sort_order == 'desc':
+                clients = sorted(clients, key=lambda a: a.potential_level(), reverse=True)
+
+        # 对list进行分页
+        paginator = Paginator(clients, length)
+        # 把数据分成10个一页。
+        try:
+            clients = paginator.page(start / 10 + 1)
+        # 请求页数错误
+        except PageNotAnInteger:
+            clients = paginator.page(1)
+        except EmptyPage:
+            clients = paginator.page(paginator.num_pages)
+        data = []
+        for item in clients:
+            row = {"rd": item.rd,
+                   "rm": item.rm,
+                   "dsm": item.dsm,
+                   "rsp": item.rsp,
+                   # "xlt_id": item.xlt_id,
+                   "hospital": item.hospital,
+                   # "province": item.province,
+                   # "dual_call": item.dual_call,
+                   "hp_level": item.hp_level,
+                   # "hp_access": item.hp_access,
+                   "name": item.name,
+                   "dept": item.dept,
+                   "title": item.title,
+                   "consulting_times": item.consulting_times,
+                   "patients_half_day": item.patients_half_day,
+                   "target_prop": "{:.0%}".format(item.target_prop / 100),
+                   "note": item.note,
+                   "monthly_target_patients": item.monthly_patients(),
+                   'potential_level': item.potential_level(),
+                   }
+            data.append(row)
+        dataTable['iTotalRecords'] = result_length  # 数据总条数
+        dataTable['sEcho'] = sEcho + 1
+        dataTable['iTotalDisplayRecords'] = result_length  # 显示的条数
+        dataTable['aaData'] = data
+        dataTable['record_n'] = 1
+
+        return HttpResponse(json.dumps(dataTable, ensure_ascii=False))
 
 
 @login_required()
@@ -291,8 +404,6 @@ def export_clients(request):
 def import_excel(request):
     SHEET_NAME = '客户档案'
     context = {'code': 0,
-               'data': [],
-               'recourd_n': 0,
                'msg': ''
                }
     if request.method == 'POST':
@@ -329,8 +440,6 @@ def import_excel(request):
                             import_record(df)
                             context['code'] = 1
                             context['msg'] = '上传成功'
-                            context['data'] = df_to_table(get_df_clients(request.user), ['医院编码', '是否双call', '省/自治区/直辖市'])
-                            context['record_n'] = df.shape[0]
                             return JsonResponse(context)
 
 
@@ -339,23 +448,7 @@ def analysis(request):
     if request.is_ajax():
         context = get_context_from_form(request)
 
-        or_condiction = Q()
-        for key, value in D_FIELD.items():
-            if len(context[key]) > 0:
-                if key in ['是否双call', '是否开户']:
-                    context[key] = [D_MAP[x] if x in D_MAP else x for x in context[key]]
-                or_condiction.add(Q(**{"{}__in".format(value): context[key]}), Q.AND)
-
-        if request.user.is_staff:
-            clients = Client.objects.filter(or_condiction)
-        else:
-            staffs = Staff.objects.get(name=request.user).get_descendants(include_self=True)
-            staff_list = [i.name for i in staffs]
-
-            clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
-                rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
-            clients = clients.filter(or_condiction)
-
+        clients = get_clients(request.suer, context, '')
         clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
         context = {
             'client_list': clients,
@@ -363,15 +456,7 @@ def analysis(request):
 
         return render(request, 'clientfile/cards.html', context)
 
-    if request.user.is_staff:
-        clients = Client.objects.all()
-    else:
-        staffs = Staff.objects.get(name=request.user).get_descendants(include_self=True)
-        staff_list = [i.name for i in staffs]
-
-        clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
-            rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
-
+    clients = get_clients(request.user)
     clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
 
     context = {}
@@ -468,25 +553,37 @@ def dsm_auth(user, dsm_list):
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
-def get_df_clients(user, context=None):
+def get_clients(user, context=None, search_key=None):
+    or_condiction = Q()
+    if context is not None:
+        for key, value in D_FIELD.items():
+            if len(context[key]) > 0:
+                if key in ['是否双call', '是否开户']:
+                    context[key] = [D_MAP[x] if x in D_MAP else x for x in context[key]]
+                or_condiction.add(Q(**{"{}__in".format(value): context[key]}), Q.AND)
+
+    # 根据前端Datatables搜索框筛选
+    if search_key is not None and search_key != '':
+        for key, value in D_SEARCH_FIELD.items():
+            or_condiction.add(Q(**{"{}__contains".format(value): search_key}), Q.OR)
+
+    # 根据用户权限筛选
     if user.is_staff:
-        clients = Client.objects.all()
-        df_clients = pd.DataFrame(list(clients.values()))
+        clients = Client.objects.filter(or_condiction)
     else:
         staffs = Staff.objects.get(name=user).get_descendants(include_self=True)
         staff_list = [i.name for i in staffs]
 
         clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
             rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
-        df_clients = pd.DataFrame(list(clients.values()))
+        clients = clients.filter(or_condiction)
+    return clients
 
-    if context is not None:
-        for key, value in D_FIELD.items():
-            if len(context[key]) > 0:
-                if key in ['是否双call', '是否开户']:
-                    context[key] = [D_MAP[x] if x in D_MAP else x for x in context[key]]
-                df_clients = df_clients[df_clients[value].isin(context[key])]
 
+def get_df_clients(user, context=None, search_key=None):
+
+    clients = get_clients(user, context, search_key)
+    df_clients = pd.DataFrame(list(clients.values()))
     if df_clients.empty is False:
         df_new = df_clients.reindex(columns=['rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',
                                              'hp_level', 'hp_access', 'name', 'dept', 'title', 'consulting_times',

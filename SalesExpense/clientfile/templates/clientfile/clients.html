@@ -42,11 +42,19 @@ DSM客户档案管理
     {% endif %}
     <div class="ui container">
         <h2 class="ui blue dividing header">现有档案</h2>
-        <input type="button" class="ui blue submit button" id="export_excel" value="导出{{ record_n }}条客户档案" onclick="location.href='{% url 'clientfile:export_clients' %}'">
+        <div class="ui labeled button" tabindex="0">
+            <div type="button" class="ui classic blue button" id="export_excel" onclick="location.href='{% url 'clientfile:export_clients' %}'">
+                <i class="file excel outline icon"></i> 导出至Excel
+            </div>
+            <a class="ui basic left pointing blue label">
+                {{ record_n }}条档案
+            </a>
+        </div>
+
         <div class="ui hidden divider"></div>
-        <div class="ui container" id='result_table'
-             style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
-            {{ table|safe }}
+        <div class="ui container" id='result_table'>
+            <table cellpadding="0" cellspacing="0" border="0" id="table" class="ui celled table">
+            </table>
         </div>
     </div>
 
@@ -86,17 +94,9 @@ $(document).ready(function () {
 
 <script>
     $(document).ready(function () {
-        $('#table').DataTable({
-            pageLength: 25,
-            autoWidth: false,
-            fixedHeader: {
-                headerOffset: 50
-            },
-            language: {
-                search: "在档案中搜索:",
-                sLengthMenu: "每页显示 _MENU_ 条档案"
-            }
-        });
+        $("#table").DataTable(
+            initDataTable(urlParam, columnsParam)
+        )
     });
 
 </script>
@@ -120,19 +120,7 @@ $(document).ready(function () {
                             if (ret.code === 1) {
                                 $("#msg").attr("class", "ui positive message");
                                 $("#msg").html(ret.msg);
-                                $("#result_table").html(ret.data);
-                                $("#export_excel").attr('value', '导出'+ret.record_n+'条客户档案');
-                                $('#table').DataTable({
-                                    pageLength: 25,
-                                    autoWidth: false,
-                                    fixedHeader: {
-                                        headerOffset: 50
-                                    },
-                                    language: {
-                                        search: "在档案中搜索:",
-                                        sLengthMenu: "每页显示 _MENU_ 条档案"
-                                    }
-                                });
+                                setTimeout(function(){$('#table').DataTable().ajax.reload(null, false);}, 1000);
                             } else {
                                 $("#msg").attr("class", "ui negative message");
                                 $("#msg").html(ret.msg);
@@ -140,13 +128,92 @@ $(document).ready(function () {
                         },
                         error: function () {
                             $("#msg").attr("class", "ui negative message");
-                            $("#msg").html("上传失败，有错误发生");
+                            $("#msg").html("上传失败，有未知错误发生，请联系管理员");
                         }
                     });
                 }
             })
         .modal("show");
     });
+</script>
+
+
+<script>
+    // table初始化方法
+    function initDataTable(urlParam, columnsParam) {
+        return {
+            sPaginationType: "full_numbers", //分页风格，full_number会把所有页码显示出来
+            searching: true,//搜索
+            ordering: true,//是否启用排序
+            bProcessing: true, //是否显示加载
+            sAjaxSource: urlParam, //请求资源路径
+            serverSide: true, //开启服务器处理模式
+            /*
+                   使用ajax，在服务端处理数据
+                   sSource:即是"sAjaxSource"
+                   aoData:要传递到服务端的参数
+                   fnCallback:处理返回数据的回调函数
+                   */
+            fnServerData: function (sSource, aoData, fnCallback) {
+                $.ajax({
+                    'type': 'POST',
+                    "url": sSource,
+                    "dataType": "json",
+                    "data": {"aodata": JSON.stringify(aoData)},
+                    "success": function (resp) {
+                        fnCallback(resp);
+                    }
+                });
+            },
+            "oLanguage": {//语言设置
+                "sLengthMenu": '<select class="form-control" style="width:150px">'
+                    + '<option value="10" selected>每页显示10条</option>'
+                    + '<option value="20">每页显示20条</option>'
+                    + '<option value="50">每页显示50条</option>'
+                    + '<option value="100">每页显示100条</option>'
+                    + '</select>',
+                "sProcessing": "处理中...",
+                "sZeroRecords": "没有匹配结果",
+                "sInfo": "显示第 _START_ 至 _END_ 条客户档案，共 _TOTAL_ 条",
+                "sInfoEmpty": "没有数据",
+                "sInfoFiltered": "(获取 _MAX_ 条客户档案)",
+                "sInfoPostFix": "",
+                "sSearch": "搜索:",
+                "sUrl": "",
+                "sEmptyTable": "表中数据为空",
+                "sLoadingRecords": "载入中...",
+                "sInfoThousands": ",",
+                "oPaginate": {
+                    "sFirst": "首页",
+                    "sPrevious": "上页",
+                    "sNext": "下页",
+                    "sLast": "末页"
+                },
+            },
+            "bServerSide": true, //开启服务器模式，使用服务器端处理配置datatable。
+            "columns": columnsParam,
+        }
+    }
+
+    var urlParam = '{% url 'clientfile:clients' %}'
+    var columnsParam = [
+        {title: "区域", data: "rd"},
+        {title: "大区", data: "rm"},
+        {title: "地区经理", data: "dsm"},
+        {title: "负责代表", data: "rsp"},
+        {title: "医院全程", data: "hospital"},
+        {title: "医院层级", data: "hp_level"},
+        {title: "客户姓名", data: "name"},
+        {title: "所在科室", data: "dept"},
+        {title: "职称", data: "title"},
+        {title: "月出诊半天", data: "consulting_times"},
+        {title: "每半天病人数", data: "patients_half_day"},
+        {title: "相关病人比例", data: "target_prop"},
+        {title: "备注", data: "note"},
+        {title: "月累积病人数", data: "monthly_target_patients"},
+        {title: "潜力评级", data: "potential_level"},
+    ];
+
 </script>
 
 <script>
