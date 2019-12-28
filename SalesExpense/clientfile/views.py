@@ -205,7 +205,7 @@ def get_chart(request, chart):
         df_count = df_count.reindex(['H', 'M', 'L'])
         c = pie_radius(df_count)
     elif chart == 'bar_line_potential_dist':
-        df['潜力区间'] = pd.qcut(df['月累计相关病人数'], 20, duplicates='drop').astype(str)
+        df['潜力区间'] = pd.cut(df['月累计相关病人数'], 20).astype(str)
         df_count = df['潜力区间'].groupby(df['潜力区间']).count()
         df_sorted = df_count[sorted(df_count.index, key=lambda x: float(x.split(", ")[0][1:]))].to_frame()
         c = bar(df_sorted, show_label=True, label_rotate=30)
