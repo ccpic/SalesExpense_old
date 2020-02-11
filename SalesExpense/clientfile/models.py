@@ -5,6 +5,8 @@ HPLEVEL_CHOICES = [
     ('B', 'B'),
     ('C', 'C'),
     ('D', 'D'),
+    ('旗舰社区', '旗舰社区'),
+    ('普通社区', '普通社区'),
 ]
 PROVINCE_CHOICES = [
     ('北京', '北京'),
@@ -66,7 +68,7 @@ class Client(models.Model):
     hospital = models.CharField(max_length=100, verbose_name='医院全称')
     province = models.CharField(max_length=10, choices=PROVINCE_CHOICES, verbose_name='省/自治区/直辖市')
     dual_call = models.BooleanField(verbose_name='是否双call')
-    hp_level = models.CharField(max_length=1, choices=HPLEVEL_CHOICES, verbose_name='医院级别')
+    hp_level = models.CharField(max_length=4, choices=HPLEVEL_CHOICES, verbose_name='医院级别')
     hp_access = models.BooleanField(verbose_name='开户进展')
     dept = models.CharField(max_length=4, choices=DEPT_CHOICES, verbose_name='所在科室')
     name = models.CharField(max_length=10, verbose_name='客户姓名')
