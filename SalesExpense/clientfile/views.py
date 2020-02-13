@@ -504,7 +504,7 @@ def validate(df):
         Column('是否双call', [InListValidation(['是', '否'])]),
         Column('医院级别', [InListValidation(list_hplevel)]),
         Column('开户进展', [InListValidation(['已开户', '未开户'])]),
-        Column('客户姓名', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation()]),
+        Column('客户姓名', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), IsDistinctValidation()]),
         Column('所在科室', [InListValidation(list_dept)]),
         Column('职称', [InListValidation(list_title)]),
         Column('月出诊次数（半天计）', [CanConvertValidation(int), InRangeValidation(0, 63)]),
