@@ -173,14 +173,14 @@ def get_chart(request, chart):
         c = bar(pivoted, show_label=True)
     elif chart == 'bar_hplevel_potential':
         df_count = df['客户姓名'].groupby(df['医院层级']).count()
-        df_count = df_count.reindex(['A', 'B', 'C', 'D'])
+        df_count = df_count.reindex(['A', 'B', 'C', 'D', '旗舰社区', '普通社区'])
         pivoted = pd.pivot_table(df, index='医院层级', values='月累计相关病人数', aggfunc=np.mean)
         pivoted.columns = ['平均月累计相关病人数']
         pivoted = pivoted.round(1).reindex(df_count.index)
         c = bar(pivoted, show_label=True)
     elif chart == 'bar_title_potential':
         df_count = df['客户姓名'].groupby(df['职称']).count()
-        df_count = df_count.reindex(['主任医师', '副主任医师', '主治医师', '住院医师'])
+        df_count = df_count.reindex(['院长', '副院长', '主任医师', '副主任医师', '主治医师', '住院医师'])
         pivoted = pd.pivot_table(df, index='职称', values='月累计相关病人数', aggfunc=np.mean)
         pivoted.columns = ['平均月累计相关病人数']
         pivoted = pivoted.round(1).reindex(df_count.index)
@@ -195,11 +195,11 @@ def get_chart(request, chart):
         c = pie_radius(df_count)
     elif chart == 'pie_hplevel':
         df_count = df['客户姓名'].groupby(df['医院层级']).count()
-        df_count = df_count.reindex(['A', 'B', 'C', 'D'])
+        df_count = df_count.reindex(['A', 'B', 'C', 'D', '旗舰社区', '普通社区'])
         c = pie_radius(df_count)
     elif chart == 'pie_title':
         df_count = df['客户姓名'].groupby(df['职称']).count()
-        df_count = df_count.reindex(['主任医师', '副主任医师', '主治医师', '住院医师'])
+        df_count = df_count.reindex(['院长', '副院长', '主任医师', '副主任医师', '主治医师', '住院医师'])
         c = pie_radius(df_count)
     elif chart == 'pie_potential_level':
         df_count = df['客户姓名'].groupby(df['潜力级别']).count()
@@ -233,40 +233,50 @@ def ajax_table(request, index):
     df = get_df_clients(request.user, context)
 
     df_client_n = pd.pivot_table(df, index=index, values='客户姓名', aggfunc='count')
-    if df[df['所在科室'] == '心内科'].shape[0] > 0:
-        df_client_n_cv = pd.pivot_table(df, index=index, columns='所在科室', values='客户姓名', aggfunc=len).loc[:, '心内科']
-
-    else:
-        df_client_n_cv = pd.pivot_table(df, index=index, columns='所在科室', values='客户姓名', aggfunc=len)
-        df_client_n_cv['心内科'] = 0
-        df_client_n_cv = df_client_n_cv.loc[:, ['心内科']]
-        print(df_client_n_cv)
-    if df[df['是否开户'] == '是'].shape[0] > 0:
-        df_client_n_noaccess = pd.pivot_table(df, index=index, columns='是否开户', values='客户姓名', aggfunc=len).loc[:, '是']
-    else:
-        df_client_n_noaccess = pd.pivot_table(df, index=index, columns='是否开户', values='客户姓名', aggfunc=len)
-        df_client_n_noaccess['是'] = 0
-        df_client_n_noaccess = df_client_n_noaccess.loc[:, ['是']]
+    df_client_n_cv = client_count(df, '所在科室', '心内科', index)
+    df_client_n_np = client_count(df, '所在科室', '肾内科', index)
+    df_client_n_noaccess = client_count(df, '是否开户', '是', index)
+    df_client_n_a = client_count(df, '医院层级', 'A', index)
+    df_client_n_b = client_count(df, '医院层级', 'B', index)
+    df_client_n_c = client_count(df, '医院层级', 'C', index)
+    df_client_n_d = client_count(df, '医院层级', 'D', index)
+    df_client_n_fc = client_count(df, '医院层级', '旗舰社区', index)
+    df_client_n_gc = client_count(df, '医院层级', '普通社区', index)
     df_hosp_n = pd.pivot_table(df, index=index, values='医院全称', aggfunc=lambda x: len(x.unique()))
     df_monthly_patients = pd.pivot_table(df, index=index, values='月累计相关病人数', aggfunc=np.mean)
     df_combined = pd.concat([df_client_n,
                              df_client_n_cv,
+                             df_client_n_np,
                              df_client_n_noaccess,
+                             df_client_n_a,
+                             df_client_n_b,
+                             df_client_n_c,
+                             df_client_n_d,
+                             df_client_n_fc,
+                             df_client_n_gc,
                              df_monthly_patients,
                              df_hosp_n,
                              ], axis=1)
 
     df_combined.columns = ['客户档案数',
-                           '心内档案比例',
-                           '开户医院档案比例',
-                           '平均月累积相关病人数',
+                           '心内%',
+                           '肾内%',
+                           '开户医院%',
+                           'A级医院%',
+                           'B级医院%',
+                           'C级医院%',
+                           'D级医院%',
+                           '旗舰社区%',
+                           '普通社区%',
+                           '平均相关病人数',
                            '医院数',
                            ]
 
-    df_combined['心内档案比例'] = df_combined['心内档案比例']/df_combined['客户档案数']
-    df_combined['开户医院档案比例'] = df_combined['开户医院档案比例']/df_combined['客户档案数']
+    for col in df_combined.columns:
+        if col not in['客户档案数',  '平均相关病人数', '医院数']:
+            df_combined[col] = df_combined[col]/df_combined['客户档案数']
     df_combined['客户数/医院'] = df_combined['客户档案数']/df_combined['医院数']
-
+    df_combined.fillna(0, inplace=True)
     table = df_combined.to_html(formatters=build_formatters_by_col(df_combined), classes='ui celled table',
                                    table_id=context['table_id'], escape=False)
     return HttpResponse(table)
@@ -704,3 +714,13 @@ def get_context_from_form(request, download_url=False):
                     selected = request.GET.get(value[:-2])
         context[key] = selected
     return context
+
+
+def client_count(df, column, target, index):
+    if df[df[column] == target].shape[0] > 0:
+        df_client_n = pd.pivot_table(df, index=index, columns=column, values='客户姓名', aggfunc=len).loc[:, target]
+    else:
+        df_client_n = pd.pivot_table(df, index=index, columns=column, values='客户姓名', aggfunc=len)
+        df_client_n[target] = 0
+        df_client_n = df_client_n.loc[:, target]
+    return df_client_n

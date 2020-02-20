@@ -303,7 +303,7 @@ def build_formatters_by_col(df):
     for (column, dtype) in df.dtypes.iteritems():
         if column == '年' or column == '月':
             pass
-        elif '份额' in column or '贡献' in column or '比例' in column:
+        elif '份额' in column or '贡献' in column or '比例' in column or '%' in column:
             d[column] = format_share
         elif '价格' in column or '单价' in column or '金额' in column:
             d[column] = format_currency
