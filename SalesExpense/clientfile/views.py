@@ -14,6 +14,7 @@ import datetime
 from .charts import *
 import json
 import re
+from django.db import IntegrityError
 from pandas_schema import Column, Schema
 from pandas_schema.validation import LeadingWhitespaceValidation, TrailingWhitespaceValidation, CanConvertValidation, \
     MatchesPatternValidation, InRangeValidation, InListValidation, CustomElementValidation, IsDistinctValidation
@@ -446,10 +447,15 @@ def import_excel(request):
                                 context['msg'] += key+d_error[key]
                             return JsonResponse(context)
                         else:
-                            import_record(df)
-                            context['code'] = 1
-                            context['msg'] = '上传成功'
-                            return JsonResponse(context)
+                            try:
+                                import_record(df)
+                            except IntegrityError as e:
+                                context['msg'] = e.args[0]
+                                return JsonResponse(context)
+                            else:
+                                context['code'] = 1
+                                context['msg'] = '上传成功'
+                                return JsonResponse(context)
 
 
 @login_required()
