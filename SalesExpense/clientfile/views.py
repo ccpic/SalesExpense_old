@@ -450,7 +450,7 @@ def import_excel(request):
                             try:
                                 import_record(df)
                             except IntegrityError as e:
-                                context['msg'] = e.args[0]
+                                context['msg'] = '文件中有记录(代表-医院-科室-客户姓名）与其他账号上传数据重复，请联系管理员解决'
                                 return JsonResponse(context)
                             else:
                                 context['code'] = 1
