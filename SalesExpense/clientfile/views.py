@@ -159,14 +159,14 @@ def get_chart(request, chart):
         c = bar(pivoted)
     elif chart == 'bar_dept_potential':
         df_count = df['客户姓名'].groupby(df['所在科室']).count()
-        df_count.sort_values(ascending=False,  inplace=True)
+        df_count = df_count.reindex(['心内科', '肾内科', '神内科', '内分泌科', '老干科', '其他科室'])
         pivoted = pd.pivot_table(df, index='所在科室', values='月累计相关病人数', aggfunc=np.mean)
         pivoted.columns = ['平均月累计相关病人数']
         pivoted = pivoted.round(1).reindex(df_count.index)
         c = bar(pivoted, show_label=True)
     elif chart == 'bar_hpaccess_potential':
         df_count = df['客户姓名'].groupby(df['是否开户']).count()
-        df_count.sort_values(ascending=False,  inplace=True)
+        df_count = df_count.reindex(['是', '否'])
         pivoted = pd.pivot_table(df, index='是否开户', values='月累计相关病人数', aggfunc=np.mean)
         pivoted.columns = ['平均月累计相关病人数']
         pivoted = pivoted.round(1).reindex(df_count.index)
@@ -187,11 +187,11 @@ def get_chart(request, chart):
         c = bar(pivoted, show_label=True)
     elif chart == 'pie_dept':
         df_count = df['客户姓名'].groupby(df['所在科室']).count()
-        df_count.sort_values(ascending=False, inplace=True)
+        df_count = df_count.reindex(['心内科', '肾内科', '神内科', '内分泌科', '老干科', '其他科室'])
         c = pie_radius(df_count)
     elif chart == 'pie_hpaccess':
         df_count = df['客户姓名'].groupby(df['是否开户']).count()
-        df_count.sort_values(ascending=False, inplace=True)
+        df_count = df_count.reindex(['是', '否'])
         c = pie_radius(df_count)
     elif chart == 'pie_hplevel':
         df_count = df['客户姓名'].groupby(df['医院层级']).count()
@@ -464,7 +464,7 @@ def import_excel(request):
                                 return JsonResponse(context)
                             else:
                                 context['code'] = 1
-                                context['msg'] = '上传成功'
+                                context['msg'] = '上传成功，可以尝试' + '<a href="analysis">分析现有数据</a>'
                                 return JsonResponse(context)
 
 
