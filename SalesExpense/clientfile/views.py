@@ -57,7 +57,6 @@ D_SELECT = {
     '是否开户': 'hpaccess-select[]',
     '所在科室': 'dept-select[]',
     '职称': 'title-select[]',
-    '客户姓名': 'name-select[]',
 }
 
 D_FIELD = {
@@ -73,7 +72,6 @@ D_FIELD = {
     '是否开户': 'hp_access',
     '所在科室': 'dept',
     '职称': 'title',
-    '客户姓名': 'name',
 }
 
 D_MAP = {
@@ -474,7 +472,6 @@ def import_excel(request):
 def analysis(request):
     DISPLAY_LENGTH = 20
     context = get_context_from_form(request)
-    print(context)
     clients = get_clients(request.user, context)
     clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
     paginator = Paginator(clients, DISPLAY_LENGTH)
