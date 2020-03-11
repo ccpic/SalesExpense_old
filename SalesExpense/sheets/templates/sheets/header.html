@@ -21,7 +21,8 @@
 <!--            </div>-->
 <!--        </div>-->
         {%  if request.user.is_staff  %}
-        <a href={% url 'admin:index' %} class="item">后台管理</a>
+            <a href={% url 'clientfile:history' %} class="item">操作记录</a>
+            <a href={% url 'admin:index' %} class="item">后台管理</a>
         {% endif %}
     </div>
     <div class="right menu">

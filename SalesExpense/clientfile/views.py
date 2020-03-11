@@ -501,6 +501,20 @@ def analysis(request):
         return render(request, 'clientfile/analysis.html', context)
 
 
+@login_required()
+def history(request):
+    history = Client.history.all()
+    df = pd.DataFrame(list(history.values('name', 'history_date', 'history_type', 'history_user')))
+    print(df)
+    df['modifier'] = df['history_date'].dt.strftime('%Y-%m-%d %H:%M') + '|' + df['history_type'] + '|' + df['history_user'].astype(str)
+    pivoted = pd.pivot_table(data=df, values='name', index='modifier', aggfunc='count')
+    d_history = pivoted.to_dict()['name']
+    context = {
+        'history': d_history
+    }
+    return render(request, 'clientfile/history.html', context)
+
+
 def validate(df):
     d_error = {}
     list_dept = [x[0] for x in DEPT_CHOICES]

@@ -1,5 +1,6 @@
 from django import template
 from ..models import Record
+from django.contrib.auth.models import User
 
 register = template.Library()
 
@@ -51,4 +52,37 @@ def select_id(str):
         return str
 
 
+@register.filter(name='modifier')
+def modifier(str):
+    try:
+        date = str.split('|')[0]
+        action = str.split('|')[1]
+        if action == '+':
+            action = '添加'
+        elif action == '-':
+            action = '删除'
+        elif action == '~':
+            action = '修改'
+        user_id = str.split('|')[2]
+        user = User.objects.get(id=user_id).username
+        return "%s%s了" % (user, action)
+    except:
+        return str
+
+@register.filter(name='modified_date')
+def modified_date(str):
+    try:
+        date = str.split('|')[0]
+        return date
+    except:
+        return str
+
+
+@register.filter(name='modified_action')
+def modified_action(str):
+    try:
+        action = str.split('|')[1]
+        return action
+    except:
+        return str
 

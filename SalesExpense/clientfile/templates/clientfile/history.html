@@ -1,0 +1,38 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load static %}
+{% load tags %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM客户档案管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:100px">
+    <div class="ui container">
+        <div class="ui feed">
+            {% for key, value in history.items %}
+                <div class="ui{% if key|modified_action == '+' %} positive{% elif key|modified_action == '-' %} negative{% endif %} message">
+                    <div class="content">
+                        <div class="summary">
+                            {{key|modifier}}{{value}}条档案
+                            <div class="date" style="float: right">
+                                {{key|modified_date}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock index %}

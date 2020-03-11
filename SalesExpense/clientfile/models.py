@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 HPLEVEL_CHOICES = [
     ('A', 'A'),
@@ -79,6 +80,7 @@ class Client(models.Model):
     target_prop = models.IntegerField(verbose_name='相关病人比例(%)')
     # monthly_prescription = models.IntegerField(verbose_name='当前月处方量')
     note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = '客户档案'

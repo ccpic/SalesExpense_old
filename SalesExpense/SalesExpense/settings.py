@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'pyecharts',
     'rest_framework',
     'el_pagination',
+    'simple_history',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 ROOT_URLCONF = 'SalesExpense.urls'
