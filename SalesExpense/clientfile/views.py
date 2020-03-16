@@ -509,8 +509,16 @@ def history(request):
     df['modifier'] = df['history_date'].dt.strftime('%Y-%m-%d %H:%M') + '|' + df['history_type'] + '|' + df['history_user'].astype(str)
     pivoted = pd.pivot_table(data=df, values='name', index='modifier', aggfunc='count')
     d_history = pivoted.to_dict()['name']
+    d_history_inv = {}
+    for k, v in d_history.items():
+        dict_element = {k: v}
+        dict_element.update(d_history_inv)
+        d_history_inv = dict_element
+
+    from django.utils.timezone import now
+    print(now())
     context = {
-        'history': d_history
+        'history': d_history_inv
     }
     return render(request, 'clientfile/history.html', context)
 
