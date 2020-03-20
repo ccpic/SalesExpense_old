@@ -6,13 +6,9 @@
             <img class="logo" src="{% static 'assets/images/logo.png' %}">
             DSM数据管理
         </a>
-         <div class="ui simple dropdown item">
-            客户档案管理 <i class="dropdown icon"></i>
-             <div class="menu">
-                <a href={% url 'clientfile:clients' %} class="item">档案管理</a>
-                <a href={% url 'clientfile:analysis' %} class="item">档案分析</a>
-             </div>
-         </div>
+        <a href={% url 'clientfile:clients' %} class="item">档案管理</a>
+        <a href={% url 'clientfile:analysis' %} class="item">档案分析</a>
+
 <!--         <div class="ui simple dropdown item">-->
 <!--            费用管理 <i class="dropdown icon"></i>-->
 <!--            <div class="menu">-->
