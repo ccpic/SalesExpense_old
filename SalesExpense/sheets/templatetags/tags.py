@@ -63,7 +63,7 @@ def modifier(str):
             action = '删除'
         elif action == '~':
             action = '修改'
-        user_id = str.split('|')[2]
+        user_id = int(float(str.split('|')[2]))
         user = User.objects.get(id=user_id).username
         return "%s%s了" % (user, action)
     except:

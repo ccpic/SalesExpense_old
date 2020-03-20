@@ -505,7 +505,7 @@ def analysis(request):
 def history(request):
     history = Client.history.all()
     df = pd.DataFrame(list(history.values('name', 'history_date', 'history_type', 'history_user')))
-    print(df)
+    df.dropna(inplace=True)
     df['modifier'] = df['history_date'].dt.strftime('%Y-%m-%d %H:%M') + '|' + df['history_type'] + '|' + df['history_user'].astype(str)
     pivoted = pd.pivot_table(data=df, values='name', index='modifier', aggfunc='count')
     d_history = pivoted.to_dict()['name']
