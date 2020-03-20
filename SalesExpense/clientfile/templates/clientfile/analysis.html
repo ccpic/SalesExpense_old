@@ -149,7 +149,11 @@ DSM客户档案管理
                 </h3>
                 <div class="ui divider"></div>
                 <div class="ui container">
-                    <div id="pie_potential_level" style="width:1024px; height:600px;"></div>
+                    {% if request.user_agent.is_mobile %}
+                        <div id="pie_potential_level" style="width:600px; height:600px;"></div>
+                    {% else %}
+                        <div id="pie_potential_level" style="width:1024px; height:600px;"></div>
+                    {% endif %}
                 </div>
                 <h3 class="ui header">
                     <div class="content">
@@ -159,7 +163,11 @@ DSM客户档案管理
                 </h3>
                 <div class="ui divider"></div>
                 <div class="ui container">
-                    <div id="bar_line_potential_dist" style="width:1024px; height:600px;"></div>
+                    {% if request.user_agent.is_mobile %}
+                        <div id="bar_line_potential_dist" style="width:600px; height:600px;"></div>
+                    {% else %}
+                        <div id="bar_line_potential_dist" style="width:1024px; height:600px;"></div>
+                    {% endif %}
                 </div>
                 <h3 class="ui header">
                     <div class="content">
@@ -169,7 +177,11 @@ DSM客户档案管理
                 </h3>
                 <div class="ui divider"></div>
                 <div class="ui container">
-                    <div id="treemap_rsp_hosp_client" style="width:1024px; height:600px;"></div>
+                    {% if request.user_agent.is_mobile %}
+                        <div id="treemap_rsp_hosp_client" style="width:600px; height:600px;"></div>
+                    {% else %}
+                        <div id="treemap_rsp_hosp_client" style="width:1024px; height:600px;"></div>
+                    {% endif %}
                 </div>
             </div>
             <div class="ui tab segment" data-tab="management_dsm">
