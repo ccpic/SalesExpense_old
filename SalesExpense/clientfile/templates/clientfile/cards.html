@@ -2,7 +2,7 @@
 {% load el_pagination_tags %}
 
 {% if client_list %}
-<div class="ui{% if request.user_agent.is_mobile %} one {% else %} five{% endif %} cards">
+<div class="ui{% if request.user_agent.is_mobile %} two {% else %} five{% endif %} cards">
     {% for client in client_list %}
     <div class="card">
         <div class="content">
