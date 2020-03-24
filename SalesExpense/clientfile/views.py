@@ -503,11 +503,12 @@ def analysis(request):
 
 @login_required()
 def history(request):
-    history = Client.history.all()
-    df = pd.DataFrame(list(history.values('name', 'history_date', 'history_type', 'history_user')))
+    history = get_clients(request.user, is_deleted=True)
+    df = pd.DataFrame(list(history.values('name', 'pub_date', 'is_deleted', 'dsm')))
     df.dropna(inplace=True)
-    df['modifier'] = df['history_date'].dt.strftime('%Y-%m-%d %H:%M') + '|' + df['history_type'] + '|' + df['history_user'].astype(str)
+    df['modifier'] = df['pub_date'].dt.strftime('%Y-%m-%d %H:%M') + '|' + df['is_deleted'].astype(str) + '|' + df['dsm']
     pivoted = pd.pivot_table(data=df, values='name', index='modifier', aggfunc='count')
+
     d_history = pivoted.to_dict()['name']
     d_history_inv = {}
     for k, v in d_history.items():
@@ -515,8 +516,6 @@ def history(request):
         dict_element.update(d_history_inv)
         d_history_inv = dict_element
 
-    from django.utils.timezone import now
-    print(now())
     context = {
         'history': d_history_inv
     }
@@ -604,7 +603,7 @@ def dsm_auth(user, dsm_list):
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
-def get_clients(user, context=None, search_key=None):
+def get_clients(user, context=None, search_key=None, is_deleted=False):
     or_condiction = Q()
     if context is not None:
         for key, value in D_FIELD.items():
@@ -618,22 +617,29 @@ def get_clients(user, context=None, search_key=None):
         for key, value in D_SEARCH_FIELD.items():
             or_condiction.add(Q(**{"{}__contains".format(value): search_key}), Q.OR)
 
+    # 根据参数决定是否显示假删除数据
+    if is_deleted is False:
+        clientset = Client.objects.all()
+    elif is_deleted is True:
+        clientset = Client.objects.all_with_deleted()
+
     # 根据用户权限筛选
     if user.is_staff:
-        clients = Client.objects.filter(or_condiction)
+
+        clients = clientset.filter(or_condiction)
     else:
         staffs = Staff.objects.get(name=user).get_descendants(include_self=True)
         staff_list = [i.name for i in staffs]
 
-        clients = Client.objects.filter(rd__in=staff_list) | Client.objects.filter(
-            rm__in=staff_list) | Client.objects.filter(dsm__in=staff_list)
+        clients = clientset.filter(rd__in=staff_list) | clientset.filter(
+            rm__in=staff_list) | clientset.filter(dsm__in=staff_list)
         clients = clients.filter(or_condiction)
     return clients
 
 
-def get_df_clients(user, context=None, search_key=None):
+def get_df_clients(user, context=None, search_key=None, is_deleted=False):
 
-    clients = get_clients(user, context, search_key)
+    clients = get_clients(user, context, search_key, is_deleted)
     df_clients = pd.DataFrame(list(clients.values()))
     if df_clients.empty is False:
         df_new = df_clients.reindex(columns=['rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',

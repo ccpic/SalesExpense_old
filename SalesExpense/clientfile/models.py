@@ -1,5 +1,58 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
+from django.db.models.query import QuerySet
+from django.db.models import Q, UniqueConstraint
+
+
+class SoftDeleteQuerySet(QuerySet):
+    #https://stackoverflow.com/questions/28896237/override-djangos-model-delete-method-for-bulk-deletion
+    def __init__(self,*args,**kwargs):
+        return super(self.__class__,self).__init__(*args,**kwargs)
+
+    def delete(self,*args,**kwargs):
+        for obj in self: obj.delete()
+
+
+class SoftDeletableManager(models.Manager):
+    """ Use this manager to get objects that have a is_deleted field """
+    def get_queryset(self,*args,**kwargs):
+        return SoftDeleteQuerySet(model=self.model, using=self._db, hints=self._hints).filter(is_deleted=False)
+
+    def all_with_deleted(self,*args,**kwargs):
+        return SoftDeleteQuerySet(model=self.model, using=self._db, hints=self._hints).filter()
+
+    def deleted_set(self,*args,**kwargs):
+        return SoftDeleteQuerySet(model=self.model, using=self._db, hints=self._hints).filter(is_deleted=True)
+
+    def get(self, *args, **kwargs):
+        """ if a specific record was requested, return it even if it's deleted """
+        return self.all_with_deleted().get(*args, **kwargs)
+
+    def filter(self, *args, **kwargs):
+        """ if pk was specified as a kwarg, return even if it's deleted """
+        if 'pk' in kwargs:
+            return self.all_with_deleted().filter(*args, **kwargs)
+        return self.get_queryset().filter(*args, **kwargs)
+
+
+class SoftDeletableModel(models.Model):
+    is_deleted = models.BooleanField(default=False, verbose_name='软删除')
+
+    class Meta:
+        abstract = True
+
+    objects = SoftDeletableManager()
+
+    def delete(self, using=None, soft=True, *args, **kwargs):
+        """
+        这里需要真删除的话soft=False即可
+        """
+        if soft:
+            self.is_deleted = True
+            self.save(using=using)
+        else:
+            return super(SoftDeletableModel, self).delete(using=using, *args, **kwargs)
+
 
 HPLEVEL_CHOICES = [
     ('A', 'A'),
@@ -60,7 +113,7 @@ TITLE_CHOICES = [
     ('其他', '其他'),
 ]
 
-class Client(models.Model):
+class Client(SoftDeletableModel):
     rd = models.CharField(max_length=10, verbose_name='所属区域')
     rm = models.CharField(max_length=10, verbose_name='所属大区')
     dsm = models.CharField(max_length=10, verbose_name='所属经理')
@@ -80,13 +133,17 @@ class Client(models.Model):
     target_prop = models.IntegerField(verbose_name='相关病人比例(%)')
     # monthly_prescription = models.IntegerField(verbose_name='当前月处方量')
     note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
-    history = HistoricalRecords()
+    pub_date = models.DateTimeField(verbose_name='上传日期',auto_now=True)
 
     class Meta:
         verbose_name = '客户档案'
         verbose_name_plural = '客户档案'
         ordering = ['rd', 'rm', 'dsm', 'rsp', 'hospital', 'dept', 'name']
-        unique_together = ('rsp', 'hospital', 'dept', 'name')
+        # unique_together = ('rsp', 'hospital', 'dept', 'name')
+        constraints = [
+            UniqueConstraint(fields=['rsp', 'hospital', 'dept', 'name'], condition=Q(is_deleted=False),
+                             name='unique_if_not_deleted')
+        ]
 
     def __str__(self):
         return "%s %s %s %s %s %s %s" % (self.rd, self.rm, self.dsm, self.rsp, self.hospital, self.dept, self.name)
@@ -101,7 +158,6 @@ class Client(models.Model):
             return 2
         else:
             return 3
-
 
     # def favor_level(self):
     #     if self.monthly_prescription <= 20:
