@@ -55,16 +55,16 @@ def select_id(str):
 @register.filter(name='modifier')
 def modifier(str):
     try:
-        date = str.split('|')[0]
         action = str.split('|')[1]
-        if action == '+':
+        user = str.split('|')[2]
+        if action == 'False':
             action = '添加'
-        elif action == '-':
+        elif action == 'True':
             action = '删除'
-        elif action == '~':
-            action = '修改'
-        user_id = int(float(str.split('|')[2]))
-        user = User.objects.get(id=user_id).username
+        # elif action == '~':
+        #     action = '修改'
+        # user_id = int(float(str.split('|')[2]))
+        # user = User.objects.get(id=user_id).username
         return "%s%s了" % (user, action)
     except:
         return str

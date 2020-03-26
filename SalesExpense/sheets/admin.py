@@ -8,5 +8,4 @@ class StaffAdmin(DjangoMpttAdmin):
 
 
 admin.site.register(Staff, StaffAdmin)
-admin.site.register([Hospital, Record])
 
