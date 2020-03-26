@@ -1,4 +1,8 @@
 {% load static %}
+{% url 'clientfile:clients' as clients_url %}
+{% url 'clientfile:analysis' as analysis_url %}
+{% url 'clientfile:history' as history_url %}
+{% url 'admin:index' as admin_url %}
 
 <div class="ui large top fixed inverted menu" id="nav_menu">
     <div class="ui container">
@@ -6,8 +10,8 @@
             <img class="logo" src="{% static 'assets/images/logo.png' %}">
             DSM数据管理
         </a>
-        <a href={% url 'clientfile:clients' %} class="item">档案管理</a>
-        <a href={% url 'clientfile:analysis' %} class="item">档案分析</a>
+        <a href="{{ clients_url }}" class="{% if request.get_full_path == clients_url %}active red{% endif %} item">档案管理</a>
+        <a href="{{ analysis_url }}"  class="{% if request.get_full_path == analysis_url %}active red{% endif %} item">档案分析</a>
 
 <!--         <div class="ui simple dropdown item">-->
 <!--            费用管理 <i class="dropdown icon"></i>-->
@@ -17,8 +21,8 @@
 <!--            </div>-->
 <!--        </div>-->
         {%  if request.user.is_staff  %}
-            <a href={% url 'clientfile:history' %} class="item">操作记录</a>
-            <a href={% url 'admin:index' %} class="item">后台管理</a>
+            <a href="{{ history_url }}" class="{% if request.get_full_path == history_url %}active red{% endif %} item">操作记录</a>
+            <a href="{{ admin_url }}" class="{% if request.get_full_path == admin_url %}active red{% endif %} item">后台管理</a>
         {% endif %}
     </div>
     <div class="right menu">

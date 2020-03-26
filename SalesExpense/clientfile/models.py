@@ -1,5 +1,4 @@
 from django.db import models
-from simple_history.models import HistoricalRecords
 from django.db.models.query import QuerySet
 from django.db.models import Q, UniqueConstraint
 

@@ -85,4 +85,3 @@ def modified_action(str):
         return action
     except:
         return str
-
