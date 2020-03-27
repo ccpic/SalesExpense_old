@@ -18,6 +18,7 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:100px">
     <div class="ui container">
+        <h1 class="ui header">累计更新档案次数 - {{ history_n }}</h1>
         <div class="ui feed">
             {% for key, value in history.items %}
                 <div class="ui{% if key|modified_action == 'False' %} positive{% elif key|modified_action == 'True' %} negative{% endif %} message">

@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.db.models.query import QuerySet
 from django.db.models import Q, UniqueConstraint
 
@@ -167,3 +168,14 @@ class Client(SoftDeletableModel):
     #         return 3
     #     else:
     #         return 4
+
+
+class Group(models.Model):
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='创建用户')
+    name = models.CharField(max_length=50, verbose_name='分组名称')
+    clients = models.ManyToManyField(Client)
+    note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
+    pub_date = models.DateTimeField(verbose_name='创建日期', auto_now=True)
+
+    def __str__(self):
+        return self.name

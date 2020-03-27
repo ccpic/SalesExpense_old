@@ -3,7 +3,6 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import simple_history.models
 
 
 class Migration(migrations.Migration):
@@ -11,51 +10,4 @@ class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('clientfile', '0003_auto_20191211_1459'),
-    ]
-
-    operations = [
-        migrations.CreateModel(
-            name='HistoricalClient',
-            fields=[
-                ('id', models.IntegerField(auto_created=True, blank=True, db_index=True, verbose_name='ID')),
-                ('rd', models.CharField(max_length=10, verbose_name='所属区域')),
-                ('rm', models.CharField(max_length=10, verbose_name='所属大区')),
-                ('dsm', models.CharField(max_length=10, verbose_name='所属经理')),
-                ('rsp', models.CharField(max_length=10, verbose_name='负责代表')),
-                ('xlt_id', models.CharField(max_length=10, verbose_name='医院编码')),
-                ('hospital', models.CharField(max_length=100, verbose_name='医院全称')),
-                ('province', models.CharField(choices=[('北京', '北京'), ('天津', '天津'), ('河北', '河北'), ('山西', '山西'), ('内蒙古', '内蒙古'), ('辽宁', '辽宁'), ('吉林', '吉林'), ('黑龙江', '黑龙江'), ('上海', '上海'), ('江苏', '江苏'), ('浙江', '浙江'), ('安徽', '安徽'), ('福建', '福建'), ('江西', '江西'), ('山东', '山东'), ('河南', '河南'), ('湖北', '湖北'), ('湖南', '湖南'), ('广东', '广东'), ('广西', '广西'), ('海南', '海南'), ('重庆', '重庆'), ('四川', '四川'), ('贵州', '贵州'), ('云南', '云南'), ('西藏', '西藏'), ('陕西', '陕西'), ('甘肃', '甘肃'), ('青海', '青海'), ('宁夏', '宁夏'), ('新疆', '新疆')], max_length=10, verbose_name='省/自治区/直辖市')),
-                ('dual_call', models.BooleanField(verbose_name='是否双call')),
-                ('hp_level', models.CharField(choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D'), ('旗舰社区', '旗舰社区'), ('普通社区', '普通社区')], max_length=4, verbose_name='医院级别')),
-                ('hp_access', models.BooleanField(verbose_name='开户进展')),
-                ('dept', models.CharField(choices=[('心内科', '心内科'), ('肾内科', '肾内科'), ('神内科', '神内科'), ('内分泌科', '内分泌科'), ('老干科', '老干科'), ('其他科室', '其他科室')], max_length=4, verbose_name='所在科室')),
-                ('name', models.CharField(max_length=10, verbose_name='客户姓名')),
-                ('title', models.CharField(choices=[('院长', '院长'), ('副院长', '副院长'), ('主任医师', '主任医师'), ('副主任医师', '副主任医师'), ('主治医师', '主治医师'), ('住院医师', '住院医师'), ('其他', '其他')], max_length=10, verbose_name='职称')),
-                ('consulting_times', models.IntegerField(verbose_name='月出诊次数（半天计）')),
-                ('patients_half_day', models.IntegerField(verbose_name='每半天门诊量')),
-                ('target_prop', models.IntegerField(verbose_name='相关病人比例(%)')),
-                ('note', models.CharField(blank=True, max_length=100, null=True, verbose_name='备注')),
-                ('history_id', models.AutoField(primary_key=True, serialize=False)),
-                ('history_date', models.DateTimeField()),
-                ('history_change_reason', models.CharField(max_length=100, null=True)),
-                ('history_type', models.CharField(choices=[('+', 'Created'), ('~', 'Changed'), ('-', 'Deleted')], max_length=1)),
-                ('history_user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'verbose_name': 'historical 客户档案',
-                'ordering': ('-history_date', '-history_id'),
-                'get_latest_by': 'history_date',
-            },
-            bases=(simple_history.models.HistoricalChanges, models.Model),
-        ),
-        migrations.AlterField(
-            model_name='client',
-            name='hp_level',
-            field=models.CharField(choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D'), ('旗舰社区', '旗舰社区'), ('普通社区', '普通社区')], max_length=4, verbose_name='医院级别'),
-        ),
-        migrations.AlterField(
-            model_name='client',
-            name='title',
-            field=models.CharField(choices=[('院长', '院长'), ('副院长', '副院长'), ('主任医师', '主任医师'), ('副主任医师', '副主任医师'), ('主治医师', '主治医师'), ('住院医师', '住院医师'), ('其他', '其他')], max_length=10, verbose_name='职称'),
-        ),
     ]

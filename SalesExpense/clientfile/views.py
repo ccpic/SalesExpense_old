@@ -504,6 +504,7 @@ def analysis(request):
 @login_required()
 def history(request):
     history = get_clients(request.user, is_deleted=True)
+    history_n = len(history)
     df = pd.DataFrame(list(history.values('name', 'pub_date', 'is_deleted', 'dsm')))
     df.dropna(inplace=True)
     df['modifier'] = df['pub_date'].dt.strftime('%Y-%m-%d %H:%M') + '|' + df['is_deleted'].astype(str) + '|' + df['dsm']
@@ -517,7 +518,8 @@ def history(request):
         d_history_inv = dict_element
 
     context = {
-        'history': d_history_inv
+        'history': d_history_inv,
+        'history_n': history_n
     }
     return render(request, 'clientfile/history.html', context)
 
