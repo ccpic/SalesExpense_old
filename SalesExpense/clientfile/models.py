@@ -179,3 +179,13 @@ class Group(models.Model):
 
     def __str__(self):
         return self.name
+
+    def total_monthly_patients(self):
+        monthly_patients = 0
+        for client in self.clients.all():
+            monthly_patients += client.monthly_patients()
+        return monthly_patients
+
+    def avg_monthly_patients(self):
+        print (self.total_monthly_patients())
+        return self.total_monthly_patients()/self.clients.count()

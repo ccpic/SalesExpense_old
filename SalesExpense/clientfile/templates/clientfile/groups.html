@@ -1,0 +1,222 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load static %}
+{% load tags %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM客户档案管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:100px">
+    <div class="ui container">
+        <h2 class="ui blue dividing header">分组管理</h2>
+        <div type="button" class="ui blue submit button" id="button_add_group">
+            新建分组
+        </div>
+        <div class="ui modal" id="modal_add_group">
+            <i class="close icon"></i>
+            <div class="header">
+                新建分组
+            </div>
+            <div class="content">
+                <form class="ui form" id="form_add_group">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label>分组名称</label>
+                        <input type="text" name="note_text" id="text_name" placeholder="分组名称">
+                    </div>
+                    <div class="field">
+                        <label>备注</label>
+                        <input type="text" name="note_text" id="text_note" placeholder="备注（可为空）">
+                    </div>
+                    <div class="field">
+                        <label>选择客户</label>
+                        <select class="ui fluid search selection dropdown" name="clients-select[]" id="clients-select" multiple="">
+                            {% for client in clients %}
+                                <option value="{{ client.id }}">{{ client.hospital }} {{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="ui error message" id="error_message_m"></div>
+                </form>
+            </div>
+            <div class="actions">
+                <div class="ui black deny button">
+                    取消
+                </div>
+                <div class="ui positive right labeled icon button">
+                    确认创建
+                    <i class="checkmark icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="ui modal" id="modal_delete_group">
+            <i class="close icon"></i>
+            <div class="header">
+                警告
+            </div>
+            <div class="content" id="delete_warning">
+            </div>
+            <div class="actions">
+                <div class="ui black deny button">
+                    取消
+                </div>
+                <div class="ui positive right labeled icon button">
+                    确认删除
+                    <i class="checkmark icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="ui hidden divider"></div>
+        <h2 class="ui blue dividing header">现有分组</h2>
+        {% if groups %}
+            <div class="ui{% if request.user_agent.is_mobile %} two {% else %} four{% endif %} cards">
+                {% for group in groups %}
+                    <div class="card">
+                        <div class="content">
+                            <div class="header">{{ group.name }}</div>
+                        </div>
+                        <div class="content">
+                            <div class="meta">
+                                <div class="ui list">
+                                    <div class="item">
+                                        <span>{{ group.note|none_to_blank }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui list">
+                            <div class="item">
+                                <a class="ui red ribbon label">客户数量</a>
+                                <span>{{ group.clients.count }}</span>
+                            </div>
+                            <div class="item">
+                                <a class="ui blue ribbon label">潜力总和</a>
+                                <span>{{ group.total_monthly_patients|stringformat:".0f" }}</span>
+                            </div>
+                            <div class="item">
+                                <a class="ui purple ribbon label">平均潜力</a>
+                                <span>{{ group.avg_monthly_patients|stringformat:".0f" }}</span>
+                            </div>
+                        </div>
+                        <div class="extra">
+                            <div class="right floated meta">
+                                <i class="calendar icon"></i>
+                                <span>创建于{{ group.pub_date }}</span>
+                            </div>
+                        </div>
+                        <div class="extra">
+                            <div class="center aligned meta">
+                                <div class="ui list">
+                                    <button class="ui mini green basic button">详情</button>
+                                    <button class="ui mini orange basic button">修改</button>
+                                    <button class="ui mini red basic button" id="button_delete_group" onclick="delete_group({{ group.pk }}, '{{ group.name }}')">删除</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        $("#button_add_group").click(function () {
+                $('#modal_add_group').modal("setting", {
+                    autofocus: false,
+                    closable: false,
+                    onApprove: function () {
+                        var validated = $('#form_add_group').form('validate form');
+                        if (!validated) {
+                            return false;
+                        }
+
+                        // 打包成get请求发送的数据
+                        var data = {
+                            "name": $("#text_name").val(),
+                            'note': $("#text_note").val(),
+                            "clients-select": $("#clients-select").val(),
+
+                        };
+                        $.ajax({
+                            // 请求的url
+                            url: '{% url 'clientfile:add_group' %}',
+                            // 请求的type
+                            type: 'POST',
+                            // 发送的数据
+                            data: data,
+                            // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                            success: function (ret) {     //成功执行
+                                location.reload();
+                            }
+                        });
+                    }
+                }).modal("show");
+            }
+        );
+    })
+</script>
+
+<script>
+    $('.ui.fluid.search.selection.dropdown')
+        .dropdown({fullTextSearch: true});
+</script>
+
+<script>
+    function delete_group(id, name) {
+        $('#delete_warning').html('您确认要删除分组 '+name+' 吗？');
+        $('#modal_delete_group')
+            .modal("setting", {
+                closable: false,
+                onApprove: function () {
+                    var data = {
+                        "id": id
+                    };
+                    $.ajax({
+                        // 请求的url
+                        url: '{% url 'clientfile:delete_group' %}',
+                        // 请求的type
+                        type: 'POST',
+                        // 发送的数据
+                        data: data,
+                        // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                        success: function (ret) {     //成功执行
+                           location.reload();
+                        }
+                    });
+                }
+            }).modal("show");
+    }
+</script>
+
+<script>
+    $('#form_add_group')
+        .form({
+            fields: {
+                name: {
+                    identifier: 'text_name',
+                    rules: [
+                        {
+                            type: 'empty',
+                            prompt: '分组名称不能为空'
+                        }
+                    ]
+                },
+            }
+        })
+    ;
+</script>
+{% endblock index %}

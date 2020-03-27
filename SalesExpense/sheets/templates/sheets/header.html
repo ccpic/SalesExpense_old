@@ -2,6 +2,7 @@
 {% url 'clientfile:clients' as clients_url %}
 {% url 'clientfile:analysis' as analysis_url %}
 {% url 'clientfile:history' as history_url %}
+{% url 'clientfile:groups' as groups_url %}
 {% url 'admin:index' as admin_url %}
 
 <div class="ui large top fixed inverted menu" id="nav_menu">
@@ -12,7 +13,7 @@
         </a>
         <a href="{{ clients_url }}" class="{% if request.get_full_path == clients_url %}active red{% endif %} item">档案管理</a>
         <a href="{{ analysis_url }}"  class="{% if request.get_full_path == analysis_url %}active red{% endif %} item">档案分析</a>
-
+        <a href="{{ groups_url }}"  class="{% if request.get_full_path == groups_url %}active red{% endif %} item">客户分组</a>
 <!--         <div class="ui simple dropdown item">-->
 <!--            费用管理 <i class="dropdown icon"></i>-->
 <!--            <div class="menu">-->

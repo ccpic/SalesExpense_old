@@ -85,3 +85,14 @@ def modified_action(str):
         return action
     except:
         return str
+
+
+@register.filter(name='none_to_blank')
+def none_to_blank(str):
+    try:
+        if str is None:
+            return ''
+        else:
+            return str
+    except:
+        return str
