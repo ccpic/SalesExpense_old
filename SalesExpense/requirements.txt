@@ -38,7 +38,7 @@ django-user-agents==0.4.0
 djangorestframework==3.10.3
 entrypoints==0.2.3
 et-xmlfile==1.0.1
-Flask==0.12.2
+Flask==1.0
 future==0.18.2
 gast==0.2.2
 geos==0.2.1
