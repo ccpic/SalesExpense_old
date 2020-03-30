@@ -182,10 +182,13 @@ class Group(models.Model):
 
     def total_monthly_patients(self):
         monthly_patients = 0
-        for client in self.clients.all():
+        clients_all_with_deleted = Client.objects.all_with_deleted().filter(group__id=self.pk)
+        for client in clients_all_with_deleted:
             monthly_patients += client.monthly_patients()
         return monthly_patients
 
     def avg_monthly_patients(self):
-        print (self.total_monthly_patients())
-        return self.total_monthly_patients()/self.clients.count()
+        if self.clients.count() == 0:
+            return 0
+        else:
+            return self.total_monthly_patients()/self.clients.count()

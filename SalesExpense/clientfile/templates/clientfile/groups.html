@@ -14,6 +14,7 @@ DSM客户档案管理
 </div>
 
 
+
 <!-- 写入 base.html 中定义的 content -->
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:100px">
@@ -81,11 +82,11 @@ DSM客户档案管理
         {% if groups %}
             <div class="ui{% if request.user_agent.is_mobile %} two {% else %} four{% endif %} cards">
                 {% for group in groups %}
-                    <div class="card">
-                        <div class="content">
+                    <div class="ui card" style="word-wrap: break-word;">
+                        <div class="content" style="height: 15%">
                             <div class="header">{{ group.name }}</div>
                         </div>
-                        <div class="content">
+                        <div class="content" style="height: 40px">
                             <div class="meta">
                                 <div class="ui list">
                                     <div class="item">
@@ -212,11 +213,16 @@ DSM客户档案管理
                         {
                             type: 'empty',
                             prompt: '分组名称不能为空'
+                        },
+                        {
+                            type: 'maxLength[25]',
+                            prompt: '分组名称不能超过25个字符'
                         }
                     ]
-                },
+                }
             }
         })
     ;
 </script>
+
 {% endblock index %}
