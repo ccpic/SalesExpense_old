@@ -13,7 +13,6 @@ register = template.Library()
 
 @register.filter
 def get_record(Record, pk):
-    print(pk)
     obj = Record.get(pk=int(pk))
     return obj
 
@@ -34,7 +33,6 @@ def multiply(value, arg):
 
 @register.filter(name='times')
 def times(number):
-    print(number)
     try:
         return range(1, number+1)
     except:

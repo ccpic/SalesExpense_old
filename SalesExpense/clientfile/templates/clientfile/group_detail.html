@@ -1,0 +1,99 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load static %}
+{% load tags %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM客户档案管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:100px">
+    <div class="ui container">
+        <div class="ui breadcrumb">
+          <a class="section" href="{% url 'clientfile:groups' %}">客户分组</a>
+          <div class="divider"> / </div>
+          <div class="active section">{{ group.name}}</div>
+        </div>
+        <div class="ui divider"></div>
+        <div class="ui pointing secondary menu">
+            <a class="item active" data-tab="group_info"><i class="info circle icon"></i>分组信息</a>
+            <a class="item" data-tab="client_cards"><i class="address card icon"></i>客户一览</a>
+        </div>
+        <div class="ui tab segment active" data-tab="group_info">
+            <h3 class="ui header">
+                <div class="content">
+                    基本信息
+                </div>
+            </h3>
+            <div class="ui divider"></div>
+            <div id="group_info">
+                <table class="ui celled striped table">
+                    <tbody>
+                    <tr>
+                        <td><h5 class="ui header">分组名称</h5></td>
+                        <td>{{ group.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">备注</h5></td>
+                        <td>{{ group.note }}</td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">创建时间</h5></td>
+                        <td>{{ group.pub_date }}</td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">客户数量</h5></td>
+                        <td>{{ group.clients_count_with_deleted }}</td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">潜力总和</h5></td>
+                        <td>{{ group.total_monthly_patients|stringformat:".0f" }}</td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">平均潜力</h5></td>
+                        <td>
+                            <span>{{ group.avg_monthly_patients|stringformat:".0f" }}</span>
+                            {% if group.clients_count_with_deleted > 0 %}
+                            <div class="ui blue basic label">高于名下{{ potential_rank }}的客户</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="ui tab segment" data-tab="client_cards">
+            <h3 class="ui header">
+                <div class="content">
+                    客户一览
+                    <div class="sub header">信息卡（按潜力排序）</div>
+                </div>
+            </h3>
+            <div class="ui divider"></div>
+            <div id="client_cards">
+                {% include 'clientfile/cards.html' %}
+            </div>
+        </div>
+    </div>
+
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        $('.pointing.secondary.menu .item').tab();
+    });
+
+</script>
+
+{% endblock index %}

@@ -5,13 +5,14 @@
 <div class="ui{% if request.user_agent.is_mobile %} two {% else %} four{% endif %} cards">
     {% for client in client_list %}
     <div class="card">
+        {% if client.updated_potential != None %}
+        <span data-tooltip="创建分组后有潜力更新：{{ client.updated_potential.monthly_patients|stringformat:".0f" }}" data-position="right center">
+            <a class="ui right corner orange label">
+                <i class="exclamation icon"></i>
+            </a>
+        </span>
+        {% endif %}
         <div class="content">
-            <!--                            {% if client.phone != None %}-->
-            <!--                            <div class="right floated meta">-->
-            <!--                                    <i class="phone icon"></i>-->
-            <!--                                        {{ client.phone }}-->
-            <!--                            </div>-->
-            <!--                            {% endif %}-->
             <div class="header">{{ client.name }}</div>
         </div>
         <div class="content">

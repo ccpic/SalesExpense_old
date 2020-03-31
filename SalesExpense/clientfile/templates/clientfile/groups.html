@@ -98,7 +98,7 @@ DSM客户档案管理
                         <div class="ui list">
                             <div class="item">
                                 <a class="ui red ribbon label">客户数量</a>
-                                <span>{{ group.clients.count }}</span>
+                                <span>{{ group.clients_count_with_deleted }}</span>
                             </div>
                             <div class="item">
                                 <a class="ui blue ribbon label">潜力总和</a>
@@ -118,7 +118,7 @@ DSM客户档案管理
                         <div class="extra">
                             <div class="center aligned meta">
                                 <div class="ui list">
-                                    <button class="ui mini green basic button">详情</button>
+                                    <button class="ui mini green basic button" onclick="location.href='groups/{{ group.id }}'">详情</button>
                                     <button class="ui mini orange basic button">修改</button>
                                     <button class="ui mini red basic button" id="button_delete_group" onclick="delete_group({{ group.pk }}, '{{ group.name }}')">删除</button>
                                 </div>

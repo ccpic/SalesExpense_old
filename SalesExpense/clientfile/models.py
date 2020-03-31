@@ -159,6 +159,16 @@ class Client(SoftDeletableModel):
         else:
             return 3
 
+    def updated_potential(self):
+        if self.is_deleted is True:
+            updated_obj = Client.objects.all_with_deleted().filter(rsp=self.rsp,
+                                                                        hospital=self.hospital,
+                                                                        dept=self.dept,
+                                                                        name=self.name,
+                                                                        is_deleted=False).first()
+            if updated_obj.monthly_patients() != self.monthly_patients():
+                return updated_obj
+
     # def favor_level(self):
     #     if self.monthly_prescription <= 20:
     #         return 1
@@ -180,15 +190,21 @@ class Group(models.Model):
     def __str__(self):
         return self.name
 
+    def clients_all_with_deleted(self):
+        return Client.objects.all_with_deleted().filter(group__id=self.pk)
+
+    def clients_count_with_deleted(self):
+        return len(self.clients_all_with_deleted())
+
     def total_monthly_patients(self):
         monthly_patients = 0
-        clients_all_with_deleted = Client.objects.all_with_deleted().filter(group__id=self.pk)
-        for client in clients_all_with_deleted:
+        for client in self.clients_all_with_deleted():
             monthly_patients += client.monthly_patients()
         return monthly_patients
 
+
     def avg_monthly_patients(self):
-        if self.clients.count() == 0:
+        if self.clients_count_with_deleted() == 0:
             return 0
         else:
-            return self.total_monthly_patients()/self.clients.count()
+            return self.total_monthly_patients()/self.clients_count_with_deleted()

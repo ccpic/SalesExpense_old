@@ -13,6 +13,7 @@ urlpatterns = [
     path(r'ajax_table/<str:index>/', views_analysis.ajax_table, name='ajax_table'),  # Ajax出表
     path(r'history', views_history.history, name='history'),  # 档案记录
     path(r'groups', views_groups.groups, name='groups'),  # 客户分组
+    path(r'groups/<int:id>/', views_groups.group_detail, name='group_detail'),  # 删除客户分组
     path(r'groups/add', views_groups.add_group, name='add_group'),  # 添加新客户分组
     path(r'groups/delete', views_groups.delete_group, name='delete_group'),  # 删除客户分组
 ]
