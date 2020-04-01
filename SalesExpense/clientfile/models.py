@@ -159,15 +159,18 @@ class Client(SoftDeletableModel):
         else:
             return 3
 
-    def updated_potential(self):
+    def updated_status(self):
         if self.is_deleted is True:
-            updated_obj = Client.objects.all_with_deleted().filter(rsp=self.rsp,
-                                                                        hospital=self.hospital,
-                                                                        dept=self.dept,
-                                                                        name=self.name,
-                                                                        is_deleted=False).first()
-            if updated_obj.monthly_patients() != self.monthly_patients():
-                return updated_obj
+            updated_obj = Client.objects.all_with_deleted().filter(hospital=self.hospital,
+                                                                   dept=self.dept,
+                                                                   name=self.name,
+                                                                   is_deleted=False).first()
+            if updated_obj is None:
+                return '\n档案移除或医院/科室发生变化'
+            else:
+                if updated_obj.monthly_patients() != self.monthly_patients():
+                    return '\n潜力更新为:'+ str(updated_obj.monthly_patients())
+                return None
 
     # def favor_level(self):
     #     if self.monthly_prescription <= 20:
@@ -186,6 +189,16 @@ class Group(models.Model):
     clients = models.ManyToManyField(Client)
     note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
     pub_date = models.DateTimeField(verbose_name='创建日期', auto_now=True)
+
+    class Meta:
+        verbose_name = '客户分组'
+        verbose_name_plural = '客户分组'
+        ordering = ['-pub_date']
+        # unique_together = ('rsp', 'hospital', 'dept', 'name')
+        constraints = [
+            UniqueConstraint(fields=['rsp', 'hospital', 'dept', 'name'], condition=Q(is_deleted=False),
+                             name='unique_if_not_deleted')
+        ]
 
     def __str__(self):
         return self.name

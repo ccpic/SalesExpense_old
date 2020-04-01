@@ -14,19 +14,19 @@ DSM客户档案管理
 </div>
 
 
-
 <!-- 写入 base.html 中定义的 content -->
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:100px">
     <div class="ui container">
-        <div class="ui breadcrumb">
+        <div class="ui massive breadcrumb">
           <a class="section" href="{% url 'clientfile:groups' %}">客户分组</a>
-          <div class="divider"> / </div>
+          <i class="right chevron icon divider"></i>
           <div class="active section">{{ group.name}}</div>
         </div>
         <div class="ui divider"></div>
         <div class="ui pointing secondary menu">
             <a class="item active" data-tab="group_info"><i class="info circle icon"></i>分组信息</a>
+            <a class="item" data-tab="client_property"><i class="chart pie icon"></i>客户属性</a>
             <a class="item" data-tab="client_cards"><i class="address card icon"></i>客户一览</a>
         </div>
         <div class="ui tab segment active" data-tab="group_info">
@@ -72,6 +72,9 @@ DSM客户档案管理
                 </table>
             </div>
         </div>
+        <div class="ui tab segment" data-tab="client_property">
+            {% include 'clientfile/property.html' %}
+        </div>
         <div class="ui tab segment" data-tab="client_cards">
             <h3 class="ui header">
                 <div class="content">
@@ -89,11 +92,59 @@ DSM客户档案管理
     </div>
 </div>
 
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        output();
+    });
+</script>
+<script>
+    function output() {
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        var data = {
+            "group_id": "{{ group.pk }}"
+        };
+        $(
+            function () {
+                getData('pie_dept', '{% url 'clientfile:ajax_chart' 'pie_dept' %}');
+                getData('bar_dept_potential', '{% url 'clientfile:ajax_chart' 'bar_dept_potential' %}');
+                getData('pie_hpaccess', '{% url 'clientfile:ajax_chart' 'pie_hpaccess' %}');
+                getData('bar_hpaccess_potential', '{% url 'clientfile:ajax_chart' 'bar_hpaccess_potential' %}');
+                getData('pie_hplevel', '{% url 'clientfile:ajax_chart' 'pie_hplevel' %}');
+                getData('bar_hplevel_potential', '{% url 'clientfile:ajax_chart' 'bar_hplevel_potential' %}');
+                getData('pie_title', '{% url 'clientfile:ajax_chart' 'pie_title' %}');
+                getData('bar_title_potential', '{% url 'clientfile:ajax_chart' 'bar_title_potential' %}');
+            }
+        );
+
+
+        function getData(chart_id, ajax_url) {
+
+            var chart = echarts.init(document.getElementById(chart_id), 'white', {renderer: 'canvas'});
+
+            chart.showLoading({
+                text: '正在加载数据'
+            });  //增加提示
+            $.ajax({
+                type: "GET",
+                url: ajax_url,
+                data: data,
+                dataType: 'json',
+                success: function (ret) {
+                    chart.clear();
+                    chart.setOption(ret.data);
+                    chart.hideLoading();
+                }
+            });
+        }
+    }
+</script>
 <script>
     $(document).ready(function(){
         $('.pointing.secondary.menu .item').tab();
     });
 
 </script>
-
 {% endblock index %}

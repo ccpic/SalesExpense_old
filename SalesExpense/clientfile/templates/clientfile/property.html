@@ -1,0 +1,87 @@
+{% load tags %}
+{% load el_pagination_tags %}
+
+<h3 class="ui header">
+    <div class="content">
+        科室
+        <div class="sub header">科室档案分布&潜力</div>
+    </div>
+</h3>
+<div class="ui divider"></div>
+<div class="ui grid">
+    <div class="{% if request.user_agent.is_mobile %}one{% else %}two{% endif %} column row">
+        <div class="column">
+            <div class="ui container">
+                <div id="pie_dept" style="width:500px; height:500px;"></div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="ui container">
+                <div id="bar_dept_potential" style="width:500px; height:500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<h3 class="ui header">
+    <div class="content">
+        开户进度
+        <div class="sub header">开户/未开户医院档案分布&潜力</div>
+    </div>
+</h3>
+<div class="ui divider"></div>
+<div class="ui grid">
+    <div class="{% if request.user_agent.is_mobile %}one{% else %}two{% endif %} column row">
+        <div class="column">
+            <div class="ui container">
+                <div id="pie_hpaccess" style="width:500px; height:500px;"></div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="ui container">
+                <div id="bar_hpaccess_potential" style="width:500px; height:500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<h3 class="ui header">
+    <div class="content">
+        医院层级
+        <div class="sub header">医院层级档案分布&潜力</div>
+    </div>
+</h3>
+<div class="ui divider"></div>
+<div class="ui grid">
+    <<div class="{% if request.user_agent.is_mobile %}one{% else %}two{% endif %} column row">
+        <div class="column">
+            <div class="ui container">
+                <div id="pie_hplevel" style="width:500px; height:500px;"></div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="ui container">
+                <div id="bar_hplevel_potential" style="width:500px; height:500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<h3 class="ui header">
+    <div class="content">
+        职称
+        <div class="sub header">职称档案分布&潜力</div>
+    </div>
+</h3>
+<div class="ui divider"></div>
+<div class="ui grid">
+    <div class="{% if request.user_agent.is_mobile %}one{% else %}two{% endif %} column row">
+        <div class="column">
+            <div class="ui container">
+                <div id="pie_title" style="width:500px; height:500px;"></div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="ui container">
+                <div id="bar_title_potential" style="width:500px; height:500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>

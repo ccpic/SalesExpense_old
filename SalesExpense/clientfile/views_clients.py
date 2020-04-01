@@ -406,7 +406,7 @@ def dsm_auth(user, dsm_list):
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
-def get_clients(user, context=None, search_key=None, is_deleted=False):
+def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=None):
     or_condiction = Q()
     if context is not None:
         for key, value in D_FIELD.items():
@@ -419,6 +419,9 @@ def get_clients(user, context=None, search_key=None, is_deleted=False):
     if search_key is not None and search_key != '':
         for key, value in D_SEARCH_FIELD.items():
             or_condiction.add(Q(**{"{}__contains".format(value): search_key}), Q.OR)
+
+    if group_id is not None:
+        or_condiction.add(Q(group__id=group_id), Q.AND)
 
     # 根据参数决定是否显示假删除数据
     if is_deleted is False:
@@ -440,9 +443,9 @@ def get_clients(user, context=None, search_key=None, is_deleted=False):
     return clients
 
 
-def get_df_clients(user, context=None, search_key=None, is_deleted=False):
+def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_id=None):
 
-    clients = get_clients(user, context, search_key, is_deleted)
+    clients = get_clients(user, context, search_key, is_deleted, group_id)
     df_clients = pd.DataFrame(list(clients.values()))
     if df_clients.empty is False:
         df_new = df_clients.reindex(columns=['rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',

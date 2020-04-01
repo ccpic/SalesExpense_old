@@ -5,8 +5,8 @@
 <div class="ui{% if request.user_agent.is_mobile %} two {% else %} four{% endif %} cards">
     {% for client in client_list %}
     <div class="card">
-        {% if client.updated_potential != None %}
-        <span data-tooltip="创建分组后有潜力更新：{{ client.updated_potential.monthly_patients|stringformat:".0f" }}" data-position="right center">
+        {% if client.updated_status != None %}
+        <span data-tooltip="创建分组后有更新：{{ client.updated_status }}" data-position="right center">
             <a class="ui right corner orange label">
                 <i class="exclamation icon"></i>
             </a>

@@ -111,16 +111,19 @@ DSM客户档案管理
                         </div>
                         <div class="extra">
                             <div class="right floated meta">
-                                <i class="calendar icon"></i>
+                                <i class="pencil icon"></i>
                                 <span>创建于{{ group.pub_date }}</span>
                             </div>
                         </div>
                         <div class="extra">
                             <div class="center aligned meta">
-                                <div class="ui list">
-                                    <button class="ui mini green basic button" onclick="location.href='groups/{{ group.id }}'">详情</button>
-                                    <button class="ui mini orange basic button">修改</button>
-                                    <button class="ui mini red basic button" id="button_delete_group" onclick="delete_group({{ group.pk }}, '{{ group.name }}')">删除</button>
+                                <div class="ui two buttons">
+                                    <button class="ui mini green basic button"
+                                            onclick="location.href='groups/{{ group.id }}'">详情
+                                    </button>
+                                    <button class="ui mini red basic button" id="button_delete_group"
+                                            onclick="delete_group({{ group.pk }}, '{{ group.name }}')">删除
+                                    </button>
                                 </div>
                             </div>
                         </div>

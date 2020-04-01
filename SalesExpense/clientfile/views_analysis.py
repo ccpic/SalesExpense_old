@@ -53,7 +53,11 @@ class ChartView(APIView):
 
 def get_chart(request, chart):
     context = get_context_from_form(request)
-    df = get_df_clients(request.user, context)
+    group_id = request.GET.get('group_id')
+    if group_id is None:
+        df = get_df_clients(request.user, context=context)
+    else:
+        df = get_df_clients(request.user, context=context, is_deleted=True, group_id=group_id)
     if chart == 'scatter_client':
         df['客户姓名'] = df['区域']+'_'+df['大区']+'_'+df['地区经理']+'_'+df['负责代表']+'_'+df['客户姓名']
         df = df.loc[: , ['客户姓名', '月累计相关病人数', '当前月处方量']]
@@ -138,7 +142,6 @@ def get_chart(request, chart):
 def ajax_table(request, index):
     context = get_context_from_form(request)
     df = get_df_clients(request.user, context)
-
     df_client_n = pd.pivot_table(df, index=index, values='客户姓名', aggfunc='count')
     df_client_n_cv = client_count(df, '所在科室', '心内科', index)
     df_client_n_np = client_count(df, '所在科室', '肾内科', index)
