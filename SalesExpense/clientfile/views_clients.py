@@ -190,7 +190,7 @@ def clients(request):
         result_length = clients.count()
         if sort_column < 13:
             if sort_order == 'asc':
-                clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]))
+                    clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]))
             elif sort_order == 'desc':
                 clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]), reverse=True)
         elif sort_column == 13:
@@ -459,12 +459,20 @@ def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_
         df_new['monthly_target_patients'] = round(df_new['consulting_times']*df_new['patients_half_day']*df_new['target_prop'], 0)
         df_new['potential_level'] = df_new['monthly_target_patients'].apply(
             lambda x: 'L' if x < 80 else ('M' if x < 200 else 'H'))
+        # df_new['hp_decile'] = django_method_to_df(clients)
 
         df_new.columns = COL_REINDEX
 
         return df_new
     else:
         return pd.DataFrame()
+
+
+def django_method_to_df(objs_django):
+    l =[]
+    for obj in objs_django:
+        l.append(obj.hp_decile())
+    return l
 
 
 def df_to_table(df, ignore_columns=None):

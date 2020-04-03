@@ -172,21 +172,11 @@ class Client(SoftDeletableModel):
                     return '\n潜力更新为:'+ str(updated_obj.monthly_patients())
                 return None
 
-    # def favor_level(self):
-    #     if self.monthly_prescription <= 20:
-    #         return 1
-    #     elif self.monthly_prescription <= 100:
-    #         return 2
-    #     elif self.monthly_prescription <= 300:
-    #         return 3
-    #     else:
-    #         return 4
-
 
 class Group(models.Model):
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='创建用户')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_group', verbose_name='创建用户')
     name = models.CharField(max_length=50, verbose_name='分组名称')
-    clients = models.ManyToManyField(Client)
+    clients = models.ManyToManyField(Client, verbose_name='分组客户')
     note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
     pub_date = models.DateTimeField(verbose_name='创建日期', auto_now=True)
 
@@ -194,11 +184,6 @@ class Group(models.Model):
         verbose_name = '客户分组'
         verbose_name_plural = '客户分组'
         ordering = ['-pub_date']
-        # unique_together = ('rsp', 'hospital', 'dept', 'name')
-        constraints = [
-            UniqueConstraint(fields=['rsp', 'hospital', 'dept', 'name'], condition=Q(is_deleted=False),
-                             name='unique_if_not_deleted')
-        ]
 
     def __str__(self):
         return self.name
@@ -215,9 +200,27 @@ class Group(models.Model):
             monthly_patients += client.monthly_patients()
         return monthly_patients
 
-
     def avg_monthly_patients(self):
         if self.clients_count_with_deleted() == 0:
             return 0
         else:
             return self.total_monthly_patients()/self.clients_count_with_deleted()
+
+
+class Hp_IQVIA(models.Model):
+    name = models.CharField(max_length=100, verbose_name='医院全称')
+    xlt_id = models.CharField(max_length=10, verbose_name='医院编码')
+    province = models.CharField(max_length=10, verbose_name='省/自治区/直辖市')
+    city = models.CharField(max_length=10, verbose_name='城市')
+    potential = models.IntegerField(verbose_name='高血压定义市场潜力')
+    potential_rank = models.IntegerField(verbose_name='潜力排名')
+    decile = models.IntegerField(verbose_name='潜力十分位')
+    is_target = models.BooleanField(verbose_name='是否目标医院')
+
+    class Meta:
+        verbose_name = 'IQVIA医院潜力评级'
+        verbose_name_plural = 'IQVIA医院潜力评级'
+        ordering = ['potential_rank']
+
+    def __str__(self):
+        return "%s %s %s" % (self.xlt_id, self.name, self.decile)

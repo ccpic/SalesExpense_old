@@ -112,7 +112,7 @@ DSM客户档案管理
                         <div class="extra">
                             <div class="right floated meta">
                                 <i class="pencil icon"></i>
-                                <span>创建于{{ group.pub_date }}</span>
+                                <span>{{ group.created_by }}创建于{{ group.pub_date|date:"Y年m月d日" }}</span>
                             </div>
                         </div>
                         <div class="extra">

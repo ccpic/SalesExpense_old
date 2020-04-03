@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Client
+from .models import Client, Group, Hp_IQVIA
 
 
 class ClientAdmin(admin.ModelAdmin):
@@ -8,4 +8,5 @@ class ClientAdmin(admin.ModelAdmin):
 # Register your models here.
 
 admin.site.register(Client, ClientAdmin)
+admin.site.register([Group, Hp_IQVIA])
 
