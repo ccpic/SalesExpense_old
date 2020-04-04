@@ -40,12 +40,11 @@ DSM客户档案管理
                         <input type="text" name="note_text" id="text_note" placeholder="备注（可为空）">
                     </div>
                     <div class="field">
-                        <label>选择客户</label>
-                        <select class="ui fluid search selection dropdown" name="clients-select[]" id="clients-select" multiple="">
-                            {% for client in clients %}
-                                <option value="{{ client.id }}">{{ client.hospital }} {{ client.name }}</option>
-                            {% endfor %}
-                        </select>
+                        <label>搜索客户</label>
+                        <div class="ui fluid search">
+                          <input class="prompt" type="text" placeholder="请尝试输入医院/客户姓名">
+                          <div class="results"></div>
+                        </div>
                     </div>
                     <div class="ui error message" id="error_message_m"></div>
                 </form>
@@ -175,8 +174,46 @@ DSM客户档案管理
 </script>
 
 <script>
-    $('.ui.fluid.search.selection.dropdown')
-        .dropdown({fullTextSearch: true});
+    var url = "{% url 'clientfile:client_search' 'QUERYPLACEHOLDER' %}".replace(
+        'QUERYPLACEHOLDER', '{query}'
+    )
+    $('.ui.fluid.search').search({
+        type: 'category',
+        apiSettings: {
+            onResponse: function (searchResponse) {
+                var
+                    response = {
+                        results: {}
+                    }
+                ;
+
+                // translate API response to work with search
+                $.each(JSON.parse(searchResponse.data), function (index, item) {
+                    var
+                        hospital = item.fields.hospital || 'Unknown',
+                        maxResults = 8
+                    ;
+                    if (index >= maxResults) {
+                        return false;
+                    }
+                    // create new Hospital category
+                    if (response.results[hospital] === undefined) {
+                        response.results[hospital] = {
+                            name: hospital,
+                            results: []
+                        };
+                    }
+                    // add result to category
+                    response.results[hospital].results.push({
+                        title: item.fields.name,
+                        description: item.fields.dept + " " + item.fields.title,
+                    });
+                });
+                return response;
+            },
+            url: url
+        }
+    });
 </script>
 
 <script>

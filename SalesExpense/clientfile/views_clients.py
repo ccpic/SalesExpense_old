@@ -17,6 +17,7 @@ from pandas_schema import Column, Schema
 from pandas_schema.validation import LeadingWhitespaceValidation, TrailingWhitespaceValidation, CanConvertValidation, \
     MatchesPatternValidation, InRangeValidation, InListValidation, CustomElementValidation, IsDistinctValidation
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.core import serializers
 
 
 try:
@@ -443,6 +444,24 @@ def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=
     return clients
 
 
+def client_search(response, kw):
+    clients_obj = get_clients(response.user, search_key=kw)
+    print("search")
+    try:
+        clients = serializers.serialize("json", clients_obj, ensure_ascii=False)
+        res = {
+            "data": clients,
+            "code": 200,
+        }
+        print(clients)
+    except Exception as e:
+        res = {
+            "errMsg": e,
+            "code": 0,
+        }
+    return HttpResponse(json.dumps(res, ensure_ascii=False), content_type="application/json charset=utf-8")
+
+
 def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_id=None):
 
     clients = get_clients(user, context, search_key, is_deleted, group_id)
@@ -468,11 +487,11 @@ def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_
         return pd.DataFrame()
 
 
-def django_method_to_df(objs_django):
-    l =[]
-    for obj in objs_django:
-        l.append(obj.hp_decile())
-    return l
+# def django_method_to_df(objs_django):
+#     l =[]
+#     for obj in objs_django:
+#         l.append(obj.hp_decile())
+#     return l
 
 
 def df_to_table(df, ignore_columns=None):

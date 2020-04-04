@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, reverse
 from django.contrib.auth.decorators import login_required
 import pandas as pd
@@ -14,10 +13,8 @@ from django.db.models import Q
 @login_required()
 def groups(request):
     groups = Group.objects.filter(created_by=request.user)
-    clients = get_clients(request.user)
     context = {
         'groups': groups,
-        'clients': clients
     }
     return render(request, 'clientfile/groups.html', context)
 

@@ -6,6 +6,7 @@ app_name = 'clientfile'
 urlpatterns = [
     path(r'', RedirectView.as_view(url='/clientfile/clients')),
     path(r'clients', views_clients.clients, name='clients'),
+    path(r'clients/search/<str:kw>', views_clients.client_search, name='client_search'),
     path(r'import_excel/', views_clients.import_excel, name='import_excel'),  # 导入记录
     path(r'export_clients/', views_clients.export_clients, name='export_clients'),  # 导出记录
     path(r'analysis', views_analysis.analysis, name='analysis'),  # 分析现有档案
