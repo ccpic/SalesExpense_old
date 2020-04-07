@@ -31,21 +31,42 @@ DSM客户档案管理
             <div class="content">
                 <form class="ui form" id="form_add_group">
                     {% csrf_token %}
-                    <div class="field">
-                        <label>分组名称</label>
-                        <input type="text" name="note_text" id="text_name" placeholder="分组名称">
-                    </div>
-                    <div class="field">
-                        <label>备注</label>
-                        <input type="text" name="note_text" id="text_note" placeholder="备注（可为空）">
-                    </div>
-                    <div class="field">
-                        <label>搜索客户</label>
-                        <div class="ui fluid search">
-                          <input class="prompt" type="text" placeholder="请尝试输入医院/客户姓名">
-                          <div class="results"></div>
-                        </div>
-                    </div>
+
+                            <div class="two fields">
+                                <div class="field">
+                                    <label>分组名称</label>
+                                    <input type="text" name="note_text" id="text_name" placeholder="分组名称">
+                                </div>
+                                <div class="field">
+                                    <label>备注</label>
+                                    <input type="text" name="note_text" id="text_note" placeholder="备注（可为空）">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>搜索客户</label>
+                                <div class="ui fluid search">
+                                    <input class="prompt" type="text" placeholder="请尝试输入医院/客户姓名">
+                                    <div class="results"></div>
+                                </div>
+                            </div>
+                                                <div class="field">
+                                <label>已选择客户</label>
+                            <table class="ui table" id="client-selected">
+                                <thead>
+                                <tr>
+                                    <th style="display:none">id</th>
+                                    <th>医院</th>
+                                    <th>科室</th>
+                                    <th>姓名</th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                                                </div>
+
+
                     <div class="ui error message" id="error_message_m"></div>
                 </form>
             </div>
@@ -148,10 +169,15 @@ DSM客户档案管理
                         }
 
                         // 打包成get请求发送的数据
+                        client_selected = [];
+                        $('td:eq(0)', $('#client-selected tr')).each(function()
+                        {
+                           client_selected.push($(this).html());
+                        });
                         var data = {
                             "name": $("#text_name").val(),
                             'note': $("#text_note").val(),
-                            "clients-select": $("#clients-select").val(),
+                            "clients-select": client_selected,
 
                         };
                         $.ajax({
@@ -207,11 +233,27 @@ DSM客户档案管理
                     response.results[hospital].results.push({
                         title: item.fields.name,
                         description: item.fields.dept + " " + item.fields.title,
+                        hospital: item.fields.hospital,
+                        dept: item.fields.dept,
+                        pk: item.pk
                     });
                 });
                 return response;
             },
             url: url
+        },
+       onSelect: function (result,response) {
+            var row = $("#client-selected tr:has(td:contains(" + result.pk +"))")
+            row.each(function () {
+                 $(this).remove();
+            });
+            $('#client-selected tbody').append('<tr><td style="display:none">' + result.pk +
+                '</td><td>' + result.hospital +
+                '</td><td>' + result.dept +
+                '</td><td>' +result.title +
+                '</td><td class="collapsing"><button class="ui negative basic button"' + ' onclick="$(this).closest(\'tr\').remove();">删除</button>'+
+                '</td></tr>');
+            return true;
         }
     });
 </script>
