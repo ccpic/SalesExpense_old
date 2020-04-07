@@ -407,7 +407,7 @@ def dsm_auth(user, dsm_list):
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
-def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=None):
+def get_clients(user, context=None, search_key=None, name_and_hosp=None, is_deleted=False, group_id=None):
     or_condiction = Q()
     if context is not None:
         for key, value in D_FIELD.items():
@@ -420,6 +420,15 @@ def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=
     if search_key is not None and search_key != '':
         for key, value in D_SEARCH_FIELD.items():
             or_condiction.add(Q(**{"{}__contains".format(value): search_key}), Q.OR)
+
+    if name_and_hosp is not None and name_and_hosp != '':
+        keywords = name_and_hosp.split()
+        print(len(keywords))
+        if len(keywords) == 1:
+            or_condiction.add(Q(name__contains=keywords[0])|Q(hospital__contains=keywords[0]), Q.AND)
+        elif len(keywords) == 2:
+            or_condiction.add(Q(name__contains=keywords[0]), Q.AND)
+            or_condiction.add(Q(hospital__contains=keywords[1]), Q.AND)
 
     if group_id is not None:
         or_condiction.add(Q(group__id=group_id), Q.AND)
@@ -445,7 +454,7 @@ def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=
 
 
 def client_search(response, kw):
-    clients_obj = get_clients(response.user, search_key=kw)
+    clients_obj = get_clients(response.user, name_and_hosp=kw)
     print("search")
     try:
         clients = serializers.serialize("json", clients_obj, ensure_ascii=False)
