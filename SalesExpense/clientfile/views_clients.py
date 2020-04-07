@@ -407,7 +407,7 @@ def dsm_auth(user, dsm_list):
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
-def get_clients(user, context=None, search_key=None, name_and_hosp=None, is_deleted=False, group_id=None):
+def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=None, name_and_hosp=None):
     or_condiction = Q()
     if context is not None:
         for key, value in D_FIELD.items():
@@ -454,7 +454,7 @@ def get_clients(user, context=None, search_key=None, name_and_hosp=None, is_dele
 
 
 def client_search(response, kw):
-    clients_obj = get_clients(response.user, name_and_hosp=kw)
+    clients_obj = get_clients(user=response.user, name_and_hosp=kw)
     print("search")
     try:
         clients = serializers.serialize("json", clients_obj, ensure_ascii=False)
@@ -473,7 +473,7 @@ def client_search(response, kw):
 
 def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_id=None):
 
-    clients = get_clients(user, context, search_key, is_deleted, group_id)
+    clients = get_clients(user=user, context=context, search_key=search_key, is_deleted=is_deleted, group_id=group_id)
     df_clients = pd.DataFrame(list(clients.values()))
     if df_clients.empty is False:
         df_new = df_clients.reindex(columns=['rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',
