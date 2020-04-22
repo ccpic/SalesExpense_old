@@ -13,6 +13,7 @@
         </a>
         <a href="{{ clients_url }}" class="{% if request.get_full_path == clients_url %}active red{% endif %} item">档案管理</a>
         <a href="{{ analysis_url }}"  class="{% if request.get_full_path == analysis_url %}active red{% endif %} item">档案分析</a>
+        <a href="{{ groups_url }}"  class="{% if request.get_full_path == groups_url %}active red{% endif %} item">客户分组事件</a>
 <!--         <div class="ui simple dropdown item">-->
 <!--            费用管理 <i class="dropdown icon"></i>-->
 <!--            <div class="menu">-->
@@ -21,7 +22,6 @@
 <!--            </div>-->
 <!--        </div>-->
         {%  if request.user.is_staff  %}
-            <a href="{{ groups_url }}"  class="{% if request.get_full_path == groups_url %}active red{% endif %} item">客户分组</a>
             <a href="{{ history_url }}" class="{% if request.get_full_path == history_url %}active red{% endif %} item">操作记录</a>
             <a href="{{ admin_url }}" class="{% if request.get_full_path == admin_url %}active red{% endif %} item">后台管理</a>
         {% endif %}

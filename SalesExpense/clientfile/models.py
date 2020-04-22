@@ -175,14 +175,14 @@ class Client(SoftDeletableModel):
 
 class Group(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_group', verbose_name='创建用户')
-    name = models.CharField(max_length=50, verbose_name='分组名称')
-    clients = models.ManyToManyField(Client, verbose_name='分组客户')
+    name = models.CharField(max_length=50, verbose_name='分组事件名称')
+    clients = models.ManyToManyField(Client, verbose_name='分组事件客户')
     note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
     pub_date = models.DateTimeField(verbose_name='创建日期', auto_now=True)
 
     class Meta:
-        verbose_name = '客户分组'
-        verbose_name_plural = '客户分组'
+        verbose_name = '客户分组事件'
+        verbose_name_plural = '客户分组事件'
         ordering = ['-pub_date']
 
     def __str__(self):

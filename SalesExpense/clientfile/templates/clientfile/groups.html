@@ -19,38 +19,43 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:100px">
     <div class="ui container">
-        <h2 class="ui blue dividing header">分组管理</h2>
+        <h2 class="ui blue dividing header">分组事件管理</h2>
         <div type="button" class="ui blue submit button" id="button_add_group">
-            新建分组
+            新建分组事件
+        </div>
+        <div type="button" class="ui classic blue button" id="export_excel" onclick="location.href='{% url 'clientfile:export_groups' %}'">
+                <i class="file excel outline icon"></i> 导出至Excel
         </div>
         <div class="ui modal" id="modal_add_group">
             <i class="close icon"></i>
             <div class="header">
-                新建分组
+                新建分组事件
             </div>
             <div class="content">
                 <form class="ui form" id="form_add_group">
                     {% csrf_token %}
 
-                            <div class="two fields">
-                                <div class="field">
-                                    <label>分组名称</label>
-                                    <input type="text" name="note_text" id="text_name" placeholder="分组名称">
-                                </div>
-                                <div class="field">
-                                    <label>备注</label>
-                                    <input type="text" name="note_text" id="text_note" placeholder="备注（可为空）">
-                                </div>
-                            </div>
-                            <div class="field">
-                                <label>搜索客户</label>
-                                <div class="ui fluid search">
-                                    <input class="prompt" type="text" placeholder="输入单个关键字同时搜索医院/客户姓名，输入'姓名 医院'格式精确搜索某医院的某客户（如'王 华西'）">
-                                    <div class="results"></div>
-                                </div>
-                            </div>
-                                                <div class="field">
-                                <label>已选择客户</label>
+                    <div class="two fields">
+                        <div class="field">
+                            <label>分组事件名称</label>
+                            <input type="text" name="note_text" id="text_name" placeholder="分组事件名称">
+                        </div>
+                        <div class="field">
+                            <label>备注</label>
+                            <input type="text" name="note_text" id="text_note" placeholder="备注（可为空）">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>搜索客户</label>
+                        <div class="ui fluid search">
+                            <input class="prompt" type="text"
+                                   placeholder="输入单个关键字同时搜索医院/客户姓名，输入'姓名 医院'格式精确搜索某医院的某客户（如'王 华西'）">
+                            <div class="results"></div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>已选择客户</label>
+                        <div class="scrolling content" style="max-height:400px;overflow-y: auto;">
                             <table class="ui table" id="client-selected">
                                 <thead>
                                 <tr>
@@ -64,9 +69,8 @@ DSM客户档案管理
                                 <tbody>
                                 </tbody>
                             </table>
-                                                </div>
-
-
+                        </div>
+                    </div>
                     <div class="ui error message" id="error_message_m"></div>
                 </form>
             </div>
@@ -98,61 +102,14 @@ DSM客户档案管理
             </div>
         </div>
         <div class="ui hidden divider"></div>
-        <h2 class="ui blue dividing header">现有分组</h2>
-        {% if groups %}
-            <div class="ui{% if request.user_agent.is_mobile %} two {% else %} four{% endif %} cards">
-                {% for group in groups %}
-                    <div class="ui card" style="word-wrap: break-word;">
-                        <div class="content" style="height: 15%">
-                            <div class="header">{{ group.name }}</div>
-                        </div>
-                        <div class="content" style="height: 40px">
-                            <div class="meta">
-                                <div class="ui list">
-                                    <div class="item">
-                                        <span>{{ group.note|none_to_blank }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ui list">
-                            <div class="item">
-                                <a class="ui red ribbon label">客户数量</a>
-                                <span>{{ group.clients_count_with_deleted }}</span>
-                            </div>
-                            <div class="item">
-                                <a class="ui blue ribbon label">潜力总和</a>
-                                <span>{{ group.total_monthly_patients|stringformat:".0f" }}</span>
-                            </div>
-                            <div class="item">
-                                <a class="ui purple ribbon label">平均潜力</a>
-                                <span>{{ group.avg_monthly_patients|stringformat:".0f" }}</span>
-                            </div>
-                        </div>
-                        <div class="extra">
-                            <div class="right floated meta">
-                                <i class="pencil icon"></i>
-                                <span>{{ group.created_by }}创建于{{ group.pub_date|date:"Y年m月d日" }}</span>
-                            </div>
-                        </div>
-                        <div class="extra">
-                            <div class="center aligned meta">
-                                <div class="ui two buttons">
-                                    <button class="ui mini green basic button"
-                                            onclick="location.href='groups/{{ group.id }}'">详情
-                                    </button>
-                                    <button class="ui mini red basic button" id="button_delete_group"
-                                            onclick="delete_group({{ group.pk }}, '{{ group.name }}')">删除
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        <h2 class="ui blue dividing header">现有分组事件</h2>
+        <div id="group_cards">
+            {% include 'clientfile/group_cards.html' %}
+        </div>
     </div>
 </div>
+
+
 <script>
     $(document).ready(function () {
         $.ajaxSetup({
@@ -260,7 +217,7 @@ DSM客户档案管理
 
 <script>
     function delete_group(id, name) {
-        $('#delete_warning').html('您确认要删除分组 '+name+' 吗？');
+        $('#delete_warning').html('您确认要删除分组事件 '+name+' 吗？');
         $('#modal_delete_group')
             .modal("setting", {
                 closable: false,
@@ -294,11 +251,11 @@ DSM客户档案管理
                     rules: [
                         {
                             type: 'empty',
-                            prompt: '分组名称不能为空'
+                            prompt: '分组事件名称不能为空'
                         },
                         {
                             type: 'maxLength[25]',
-                            prompt: '分组名称不能超过25个字符'
+                            prompt: '分组事件名称不能超过25个字符'
                         }
                     ]
                 }
@@ -307,4 +264,11 @@ DSM客户档案管理
     ;
 </script>
 
+<style>
+    .ui.table thead tr:first-child > th {
+        position: sticky !important;
+        top: 0;
+        z-index: 2;
+    }
+</style>
 {% endblock index %}

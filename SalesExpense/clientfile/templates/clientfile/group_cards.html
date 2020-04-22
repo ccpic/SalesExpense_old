@@ -1,0 +1,105 @@
+{% load tags %}
+{% load el_pagination_tags %}
+
+{% if group_list %}
+<div class="ui{% if request.user_agent.is_mobile %} two {% else %} four{% endif %} cards">
+    {% for group in group_list %}
+    <div class="ui card" style="word-wrap: break-word;">
+        <div class="content" style="height: 15%">
+            <div class="header">{{ group.name }}</div>
+        </div>
+        <div class="content" style="height: 40px">
+            <div class="meta">
+                <div class="ui list">
+                    <div class="item">
+                        <span>{{ group.note|none_to_blank }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ui list">
+            <div class="item">
+                <a class="ui red ribbon label">客户数量</a>
+                <span>{{ group.clients_count_with_deleted }}</span>
+            </div>
+            <div class="item">
+                <a class="ui blue ribbon label">潜力总和</a>
+                <span>{{ group.total_monthly_patients|stringformat:".0f" }}</span>
+            </div>
+            <div class="item">
+                <a class="ui purple ribbon label">平均潜力</a>
+                <span>{{ group.avg_monthly_patients|stringformat:".0f" }}</span>
+            </div>
+        </div>
+        <div class="extra">
+            <div class="right floated meta">
+                <i class="pencil icon"></i>
+                <span>{{ group.created_by }}创建于{{ group.pub_date|date:"Y年m月d日" }}</span>
+            </div>
+        </div>
+        <div class="extra">
+            <div class="center aligned meta">
+                <div class="ui two buttons">
+                    <button class="ui mini green basic button"
+                            onclick="location.href='groups/{{ group.id }}'">详情
+                    </button>
+                    <button class="ui mini red basic button" id="button_delete_group"
+                            onclick="delete_group({{ group.pk }}, '{{ group.name }}')">删除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<div class="ui hidden divider"></div>
+
+<div class="content" style="float: right;">
+    <span>&nbsp;&nbsp;当前显示第
+    {{ group_list.start_index }}-{{ group_list.end_index }} of {{ record_n }}项分组事件
+    </span>
+</div>
+<div class="ui pagination menu">
+    <a class="item" onclick="getAjaxData(1)" href="javascript:void(0)">&lt;&lt;</a>
+
+    {% if group_list.number|add:'-4' > 1 %}
+    <a class="item" onclick="getAjaxData({{ group_list.number|add:'-5' }})"  href="javascript:void(0)">&hellip;</a>
+    {% endif %}
+
+
+    {% for n in num_pages|times %}
+    {% if n == group_list.number %}
+    <span class="active item" onclick="getAjaxData({{ n }})" href="javascript:void(0)">{{ n }}</span>
+    {% elif n > group_list.number|add:'-5' and n < group_list.number|add:'5' %}
+    <a class="item" onclick="getAjaxData({{ n }})" href="javascript:void(0)">{{ n }}</a>
+    {% endif %}
+    {% endfor %}
+
+
+    {% if num_pages > group_list.number|add:'4' %}
+    <a class="item" onclick="getAjaxData({{ group_list.number|add:'5' }})" href="javascript:void(0)">&hellip;</a>
+    {% endif %}
+
+    <a class="item" onclick="getAjaxData({{ num_pages }})" href="javascript:void(0)">&gt;&gt;</a>
+</div>
+
+{% endif %}
+
+<script type="text/javascript">
+    function getAjaxData(page){
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        var data = {
+            "page":page
+        };
+        $.ajax({
+            type:"POST",
+            url:'{% url 'clientfile:groups' %}',
+            data:data,
+            success:function(ret){
+                $('#group_cards').html(ret);
+            }
+        })
+    }
+ </script>

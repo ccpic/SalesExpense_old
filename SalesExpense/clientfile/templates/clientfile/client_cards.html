@@ -6,7 +6,7 @@
     {% for client in client_list %}
     <div class="card">
         {% if client.updated_status != None %}
-        <span data-tooltip="创建分组后有更新：{{ client.updated_status }}" data-position="right center">
+        <span data-tooltip="创建分组事件后有更新：{{ client.updated_status }}" data-position="right center">
             <a class="ui right corner orange label">
                 <i class="exclamation icon"></i>
             </a>

@@ -33,7 +33,7 @@ def analysis(request):
         'display_length': DISPLAY_LENGTH,
     }
     if request.is_ajax():
-        return render(request, 'clientfile/cards.html', context)
+        return render(request, 'clientfile/client_cards.html', context)
     else:
         context['field_list'] = {}
         for key, value in D_FIELD.items():
