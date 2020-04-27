@@ -14,7 +14,7 @@ def history(request):
     clients_his_latest_week = clients_his.filter(pub_date__gte=one_week_ago)
     clients_his_latest_week_n= len(clients_his_latest_week)
     if clients_his_latest_week_n > 0:
-        df = pd.DataFrame(list(clients_his.values('name', 'pub_date', 'is_deleted', 'dsm')))
+        df = pd.DataFrame(list(clients_his_latest_week.values('name', 'pub_date', 'is_deleted', 'dsm')))
         df.dropna(inplace=True)
         df['modifier'] = df['pub_date'].dt.strftime('%Y-%m-%d %H:%M') + '|' + df['is_deleted'].astype(str) + '|' + df['dsm']
         pivoted = pd.pivot_table(data=df, values='name', index='modifier', aggfunc='count')
