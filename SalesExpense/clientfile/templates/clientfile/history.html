@@ -18,20 +18,44 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:100px">
     <div class="ui container">
-        <h1 class="ui header">累计更新档案数 - {{ history_n }}</h1>
-        <div class="ui feed">
-            {% for key, value in history.items %}
-                <div class="ui{% if key|modified_action == 'False' %} positive{% elif key|modified_action == 'True' %} negative{% endif %} message">
-                    <div class="content">
-                        <div class="summary">
-                            {{key|modifier}}{{value}}条档案
-                            <div class="date" style="float: right">
-                                {{key|modified_date}}
+        <div class="ui grid">
+            <div class="eight wide column">
+                <h1 class="ui blue dividing medium header">累计更新档案数 - {{ clients_his_n }}</h1>
+                <h1 class="ui blue dividing medium header">过去一周更新档案数 - {{ clients_his_latest_week_n }}</h1>
+                <div class="ui feed">
+                    {% for key, value in clients_his_latest_week.items %}
+                    <div class="ui{% if key|modified_action == 'False' %} positive{% elif key|modified_action == 'True' %} negative{% endif %} message">
+                        <div class="content">
+                            <div class="summary">
+                                {{key|modifier}}{{value}}条档案
+                                <div class="date" style="float: right">
+                                    {{key|modified_date}}
+                                </div>
                             </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
+            </div>
+
+            <div class="eight wide column">
+                <h1 class="ui red dividing medium header">累计创建分组数 - {{ groups_his_n }}</h1>
+                <h1 class="ui red dividing medium header">过去一周创建分组数 - {{ groups_his_latest_week_n }}</h1>
+                <div class="ui feed">
+                    {% for group in groups_his_latest_week %}
+                    <div class="ui positive message">
+                        <div class="content">
+                            <div class="summary">
+                                {{ group.created_by }}创建了<a href="{% url 'clientfile:group_detail' group.pk %}">{{ group.name }}</a>
+                                <div class="date" style="float: right">
+                                    {{ group.pub_date }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

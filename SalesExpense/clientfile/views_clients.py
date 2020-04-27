@@ -407,7 +407,7 @@ def dsm_auth(user, dsm_list):
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
-def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=None, name_and_hosp=None):
+def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=None, pub_date_gte=None, name_and_hosp=None):
     or_condiction = Q()
     if context is not None:
         for key, value in D_FIELD.items():
@@ -432,6 +432,9 @@ def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=
 
     if group_id is not None:
         or_condiction.add(Q(group__id=group_id), Q.AND)
+
+    if pub_date_gte is not None:
+        or_condiction.add(Q(pub_date__gte=pub_date_gte), Q.AND)
 
     # 根据参数决定是否显示假删除数据
     if is_deleted is False:
@@ -471,9 +474,15 @@ def client_search(response, kw):
     return HttpResponse(json.dumps(res, ensure_ascii=False), content_type="application/json charset=utf-8")
 
 
-def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_id=None):
+def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_id=None, pub_date_gte=None):
 
-    clients = get_clients(user=user, context=context, search_key=search_key, is_deleted=is_deleted, group_id=group_id)
+    clients = get_clients(user=user,
+                          context=context,
+                          search_key=search_key,
+                          is_deleted=is_deleted,
+                          group_id=group_id,
+                          pub_date_gte=pub_date_gte
+                          )
     df_clients = pd.DataFrame(list(clients.values()))
     if df_clients.empty is False:
         df_new = df_clients.reindex(columns=['rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',
