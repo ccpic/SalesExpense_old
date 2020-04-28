@@ -18,7 +18,7 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:100px">
     <div class="ui container">
-        <div class="ui massive breadcrumb">
+        <div class="ui huge breadcrumb">
           <a class="section" href="{% url 'clientfile:groups' %}">客户分组事件</a>
           <i class="right chevron icon divider"></i>
           <div class="active section">{{ group.name}}</div>
@@ -92,7 +92,7 @@ DSM客户档案管理
                                     <td style="display:none">{{ client.pk }}</td>
                                     <td>{{ client.hospital }}</td>
                                     <td>{{ client.dept }}</td>
-                                    <td>{{ client.name }}</td>
+                                    <td><a href="{% url 'clientfile:client_detail' client.pk %}">{{ client.name }}</a></td>
                                     <td><div class="ui star rating" data-rating="{{ client.potential_level }}" data-max-rating="3"></div></td>
                                 </tr>
                                 {% endfor %}

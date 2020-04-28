@@ -94,3 +94,29 @@ def none_to_blank(str):
             return str
     except:
         return str
+
+
+@register.filter(name='percentage')
+def percentage(value, decimal):
+    try:
+        format_str = '{0:.'+ str(decimal) + '%}'
+        return format_str.format(value)
+    except:
+        return value
+
+
+@register.filter(name='value_to_color')
+def value_to_color(value):
+    try:
+        if value > 0.8:
+            return 'green'
+        elif value > 0.6:
+            return 'olive'
+        elif value > 0.4:
+            return 'yellow'
+        elif value > 0.2:
+            return 'orange'
+        else:
+            return 'red'
+    except:
+        return ''

@@ -18,7 +18,7 @@ from pandas_schema.validation import LeadingWhitespaceValidation, TrailingWhites
     MatchesPatternValidation, InRangeValidation, InListValidation, CustomElementValidation, IsDistinctValidation
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core import serializers
-
+import scipy.stats as stats
 
 try:
     from io import BytesIO as IO  # for modern python
@@ -251,6 +251,69 @@ def clients(request):
 
         return HttpResponse(json.dumps(dataTable, ensure_ascii=False))
 
+
+@login_required()
+def client_detail(request, id):
+    client = Client.objects.get(pk=id)
+    client_monthly_patients = client.monthly_patients()
+
+    # 全国潜力分位
+    pct_rank = get_pct_rank(client_monthly_patients, Client.objects.all())
+
+    #同医院潜力分位
+    clients_same_hosp = Client.objects.filter(hospital=client.hospital)
+    pct_rank_same_hosp = get_pct_rank(client_monthly_patients, clients_same_hosp)
+
+    # 同医院同科室潜力分位
+    clients_same_hosp_dept = Client.objects.filter(hospital=client.hospital, dept=client.dept)
+    pct_rank_same_hosp_dept = get_pct_rank(client_monthly_patients, clients_same_hosp_dept)
+
+    # 同医院同科室同职称潜力分位
+    clients_same_hosp_dept_title = Client.objects.filter(hospital=client.hospital, dept=client.dept, title=client.title)
+    pct_rank_same_hosp_dept_title = get_pct_rank(client_monthly_patients, clients_same_hosp_dept_title)
+
+    # 同省份潜力分位
+    clients_same_province = Client.objects.filter(province=client.province)
+    pct_rank_same_province = get_pct_rank(client_monthly_patients, clients_same_province)
+
+    # 同rd潜力分位
+    clients_same_rd = Client.objects.filter(rd=client.rd)
+    pct_rank_same_rd = get_pct_rank(client_monthly_patients, clients_same_rd)
+
+    # 同rm潜力分位
+    clients_same_rm = Client.objects.filter(rm=client.rm)
+    pct_rank_same_rm = get_pct_rank(client_monthly_patients, clients_same_rm)
+
+    # 同dsm潜力分位
+    clients_same_dsm = Client.objects.filter(dsm=client.dsm)
+    pct_rank_same_dsm = get_pct_rank(client_monthly_patients, clients_same_dsm)
+
+    # 同rsp潜力分位
+    clients_same_rsp = Client.objects.filter(rsp=client.rsp)
+    pct_rank_same_rsp = get_pct_rank(client_monthly_patients, clients_same_rsp)
+
+    #同DSM相似潜力医生
+    client_monthly_patients_lb = client_monthly_patients * 0.95
+    client_monthly_patients_ub = client_monthly_patients * 1.05
+    related_ids = [client.id for client in clients_same_dsm if client_monthly_patients_lb < client.monthly_patients() < client_monthly_patients_ub]
+    print(related_ids)
+    clients_related = Client.objects.filter(id__in=related_ids)
+    context = {
+        'client': client,
+        'clients_related': clients_related,
+        'clients_same_hosp_dept': clients_same_hosp_dept,
+        'pct_rank': pct_rank,
+        'pct_rank_same_hosp': pct_rank_same_hosp,
+        'pct_rank_same_hosp_dept': pct_rank_same_hosp_dept,
+        'pct_rank_same_hosp_dept_title': pct_rank_same_hosp_dept_title,
+        'pct_rank_same_province': pct_rank_same_province,
+        'pct_rank_same_rd': pct_rank_same_rd,
+        'pct_rank_same_rm': pct_rank_same_rm,
+        'pct_rank_same_dsm': pct_rank_same_dsm,
+        'pct_rank_same_rsp': pct_rank_same_rsp
+    }
+
+    return render(request, 'clientfile/client_detail.html', context)
 
 @login_required()
 def export_clients(request):
@@ -580,3 +643,12 @@ def get_context_from_form(request, download_url=False):
                     selected = request.GET.get(value[:-2])
         context[key] = selected
     return context
+
+
+def get_pct_rank(value, queryset_clients):
+    '''计算潜力在queryset档案中的百分位排名'''
+    list_potential = []
+    for client in queryset_clients:
+        list_potential.append(client.monthly_patients())
+    pct_rank = stats.percentileofscore(list_potential, value, kind='strict')/100
+    return pct_rank

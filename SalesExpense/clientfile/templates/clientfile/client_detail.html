@@ -1,0 +1,272 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load static %}
+{% load tags %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM客户档案管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:100px">
+    <div class="ui container">
+        <div class="ui huge breadcrumb">
+            <div class="section">客户档案</div>
+            <i class="right chevron icon divider"></i>
+            <div class="section">{{ client.rd }}</div>
+            <i class="right chevron icon divider"></i>
+            <div class="section">{{ client.rm }}</div>
+            <i class="right chevron icon divider"></i>
+            <div class="section">{{ client.dsm }}</div>
+            <i class="right chevron icon divider"></i>
+            <div class="section">{{ client.rsp }}</div>
+            <i class="right chevron icon divider"></i>
+            <div class="section">{{ client.hospital }}</div>
+            <i class="right chevron icon divider"></i>
+            <div class="section">{{ client.dept }}</div>
+            <i class="right chevron icon divider"></i>
+            <div class="active section">{{ client.name }}</div>
+        </div>
+        <div class="ui divider"></div>
+        <div class="ui pointing secondary menu">
+            <a class="item active" data-tab="client_info"><i class="info circle icon"></i>客户信息</a>
+            <a class="item" data-tab="client_related"><i class="users icon"></i>相关客户</a>
+        </div>
+        <div class="ui tab segment active" data-tab="client_info">
+            <h3 class="ui header">
+                <div class="content">
+                    {{ client.name }}
+                    <div class="ui star rating" data-rating="{{ client.potential_level }}" data-max-rating="3"></div>
+                    <div class="ui {{ pct_rank|value_to_color }} basic label">
+                        潜力高于全国{{ pct_rank|percentage:1 }}的客户
+                    </div>
+                </div>
+            </h3>
+
+            <div class="ui divider"></div>
+            <div class="ui hidden divider"></div>
+            <div class="ui four tiny statistics">
+                <div class="statistic">
+                    <div class="value">{{ client.consulting_times }}</div>
+                    <div class="label">月出诊次数（半天计）</div>
+                </div>
+                <div class="statistic">
+                    <div class="value">{{ client.patients_half_day }}</div>
+                    <div class="label">每半天门诊量</div>
+                </div>
+                <div class="statistic">
+                    <div class="value">{{ client.target_prop }}</div>
+                    <div class="label">相关病人比例(%)</div>
+                </div>
+                <div class="statistic">
+                    <div class="value">{{ client.monthly_patients|stringformat:'d' }}</div>
+                    <div class="label">月相关病人数</div>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+            <div id="client_info">
+                <table class="ui celled striped table">
+                    <tbody>
+                    <tr>
+                        <td><h5 class="ui header">医院</h5></td>
+                        <td><span>{{ client.xlt_id }} {{ client.hospital }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_hosp|value_to_color }} basic label">
+                                潜力高于该院{{ pct_rank_same_hosp|percentage:1 }}的客户
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">科室</h5></td>
+                        <td><span>{{ client.dept }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_hosp_dept|value_to_color }} basic label">
+                                潜力高于该院{{ pct_rank_same_hosp_dept|percentage:1 }}的{{ client.dept }}客户
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">职称</h5></td>
+                        <td><span>{{ client.title }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_hosp_dept_title|value_to_color }} basic label">
+                                潜力高于该院{{ pct_rank_same_hosp_dept_title|percentage:1 }}的{{ client.dept }}{{ client.title }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">省/自治区/直辖市</h5></td>
+                        <td><span>{{ client.province }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_province|value_to_color }} basic label">
+                                潜力高于该省{{ pct_rank_same_province|percentage:1 }}的客户
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">所属区域</h5></td>
+                        <td><span>{{ client.rd }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_rd|value_to_color }} basic label">
+                                潜力高于该区域{{ pct_rank_same_rd|percentage:1 }}的客户
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">所属大区</h5></td>
+                        <td><span>{{ client.rm }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_rm|value_to_color }} basic label">
+                                潜力高于该大区{{ pct_rank_same_rm|percentage:1 }}的客户
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">地区经理</h5></td>
+                        <td><span>{{ client.dsm }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_dsm|value_to_color }} basic label">
+                                潜力高于该地区经理{{ pct_rank_same_dsm|percentage:1 }}的客户
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">负责代表</h5></td>
+                        <td><span>{{ client.rsp }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_rsp|value_to_color }} basic label">
+                                潜力高于该代表{{ pct_rank_same_rsp|percentage:1 }}的客户
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="ui tab segment" data-tab="client_related">
+            {% if clients_same_hosp_dept %}
+            <table class="ui table" id="client_same_hosp_dept">
+                <thead>
+                <tr>
+                    <th style="display:none">id</th>
+                    <th>医院</th>
+                    <th>科室</th>
+                    <th>姓名</th>
+                    <th>潜力评级</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for client in clients_same_hosp_dept %}
+                <tr>
+                    <td style="display:none">{{ client.pk }}</td>
+                    <td style="width: 55%">{{ client.hospital }}</td>
+                    <td style="width: 15%">{{ client.dept }}</td>
+                    <td style="width: 15%"><a href="{% url 'clientfile:client_detail' client.pk %}">{{ client.name }}</a></td>
+                    <td style="width: 15%">
+                        <div class="ui star rating" data-rating="{{ client.potential_level }}"
+                             data-max-rating="3"></div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            {% if clients_related %}
+            <table class="ui table" id="client-related">
+                <thead>
+                <tr>
+                    <th style="display:none">id</th>
+                    <th>医院</th>
+                    <th>科室</th>
+                    <th>姓名</th>
+                    <th>潜力评级</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for client in clients_related %}
+                <tr>
+                    <td style="display:none">{{ client.pk }}</td>
+                    <td style="width: 55%">{{ client.hospital }}</td>
+                    <td style="width: 15%">{{ client.dept }}</td>
+                    <td style="width: 15%"><a href="{% url 'clientfile:client_detail' client.pk %}">{{ client.name }}</a></td>
+                    <td style="width: 15%">
+                        <div class="ui star rating" data-rating="{{ client.potential_level }}"
+                             data-max-rating="3"></div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        output();
+    });
+</script>
+<script>
+    function output() {
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        var data = {
+            "group_id": "{{ group.pk }}"
+        };
+        $(
+            function () {
+                getData('pie_dept', '{% url 'clientfile:ajax_chart' 'pie_dept' %}');
+                getData('bar_dept_potential', '{% url 'clientfile:ajax_chart' 'bar_dept_potential' %}');
+                getData('pie_hpaccess', '{% url 'clientfile:ajax_chart' 'pie_hpaccess' %}');
+                getData('bar_hpaccess_potential', '{% url 'clientfile:ajax_chart' 'bar_hpaccess_potential' %}');
+                getData('pie_hplevel', '{% url 'clientfile:ajax_chart' 'pie_hplevel' %}');
+                getData('bar_hplevel_potential', '{% url 'clientfile:ajax_chart' 'bar_hplevel_potential' %}');
+                getData('pie_title', '{% url 'clientfile:ajax_chart' 'pie_title' %}');
+                getData('bar_title_potential', '{% url 'clientfile:ajax_chart' 'bar_title_potential' %}');
+            }
+        );
+
+
+        function getData(chart_id, ajax_url) {
+
+            var chart = echarts.init(document.getElementById(chart_id), 'white', {renderer: 'canvas'});
+
+            chart.showLoading({
+                text: '正在加载数据'
+            });  //增加提示
+            $.ajax({
+                type: "GET",
+                url: ajax_url,
+                data: data,
+                dataType: 'json',
+                success: function (ret) {
+                    chart.clear();
+                    chart.setOption(ret.data);
+                    chart.hideLoading();
+                }
+            });
+        }
+    }
+</script>
+<script>
+    $(document).ready(function(){
+        $('.pointing.secondary.menu .item').tab();
+        $(".rating").rating('disable');
+    });
+
+</script>
+
+{% endblock index %}
