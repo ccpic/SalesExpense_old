@@ -62,7 +62,6 @@ def group_detail(request, id):
     for client in clients_all:
         list_potential.append(client.monthly_patients())
     pct_rank = '{:.1%}'.format(stats.percentileofscore(list_potential, group.avg_monthly_patients())/100)
-
     context = {
         'group': group,
         'client_list': rows,
@@ -71,8 +70,10 @@ def group_detail(request, id):
         'display_length': DISPLAY_LENGTH,
         'potential_rank': pct_rank
     }
-
-    return render(request, 'clientfile/group_detail.html', context)
+    if request.is_ajax():
+        return render(request, 'clientfile/group_client_cards.html', context)
+    else:
+        return render(request, 'clientfile/group_detail.html', context)
 
 
 @login_required()

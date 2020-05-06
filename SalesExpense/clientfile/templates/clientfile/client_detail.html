@@ -153,6 +153,7 @@ DSM客户档案管理
         </div>
         <div class="ui tab segment" data-tab="client_related">
             {% if clients_same_hosp_dept %}
+            <h3 class="header">同事</h3>
             <table class="ui table" id="client_same_hosp_dept">
                 <thead>
                 <tr>
@@ -180,6 +181,7 @@ DSM客户档案管理
             </table>
             {% endif %}
             {% if clients_related %}
+            <h3 class="header">同一DSM名下潜力相近客户</h3>
             <table class="ui table" id="client-related">
                 <thead>
                 <tr>

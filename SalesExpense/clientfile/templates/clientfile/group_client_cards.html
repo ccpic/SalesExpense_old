@@ -5,6 +5,13 @@
 <div class="ui{% if request.user_agent.is_mobile %} two {% else %} four{% endif %} cards">
     {% for client in client_list %}
     <a class="ui card" href="{% url 'clientfile:client_detail' client.pk %}">
+        {% if client.updated_status != None %}
+        <span data-tooltip="创建分组事件后有更新：{{ client.updated_status }}" data-position="right center">
+            <div class="ui right corner orange label">
+                <i class="exclamation icon"></i>
+            </div>
+        </span>
+        {% endif %}
         <div class="content">
             <div class="header">{{ client.name }}</div>
         </div>
@@ -94,26 +101,14 @@
             data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
         });
         var data = {
-            "province-select": $("#province-select").val(),
-            "rd-select": $("#rd-select").val(),
-            "rm-select": $("#rm-select").val(),
-            "dsm-select": $("#dsm-select").val(),
-            "rsp-select": $("#rsp-select").val(),
-            "xltid-select": $("#xltid-select").val(),
-            "hosp-select": $("#hosp-select").val(),
-            "dc-select": $("#dc-select").val(),
-            "hplevel-select": $("#hplevel-select").val(),
-            "hpaccess-select": $("#hpaccess-select").val(),
-            "dept-select": $("#dept-select").val(),
-            "title-select": $("#title-select").val(),
             "page":page
         };
         $.ajax({
             type:"POST",
-            url:'{% url 'clientfile:analysis' %}',
+            url:'{% url 'clientfile:group_detail' id=group.id  %}',
             data:data,
             success:function(ret){
-                $('#client_cards').html(ret);
+                $('#group_client_cards').html(ret);
             }
         })
     }

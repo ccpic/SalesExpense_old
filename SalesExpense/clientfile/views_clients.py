@@ -233,7 +233,7 @@ def clients(request):
                    # "dual_call": item.dual_call,
                    "hp_level": item.hp_level,
                    # "hp_access": item.hp_access,
-                   "name": item.name,
+                   "name": '<a href="/clientfile/clients/%s">%s</a>' % (item.pk, item.name),
                    "dept": item.dept,
                    "title": item.title,
                    "consulting_times": item.consulting_times,
@@ -562,7 +562,6 @@ def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_
         # df_new['hp_decile'] = django_method_to_df(clients)
 
         df_new.columns = COL_REINDEX
-
         return df_new
     else:
         return pd.DataFrame()
@@ -578,7 +577,6 @@ def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_
 def df_to_table(df, ignore_columns=None):
     if ignore_columns is not None and df.empty is False:
         df.drop(columns=ignore_columns, inplace=True)
-    if df.empty is False:
         table = df.to_html(formatters=build_formatters_by_col(df), classes='ui celled small table',
                                table_id='table', escape=False, index=False)
         return table
