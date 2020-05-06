@@ -39,6 +39,7 @@ DSM客户档案管理
         <div class="ui pointing secondary menu">
             <a class="item active" data-tab="client_info"><i class="info circle icon"></i>客户信息</a>
             <a class="item" data-tab="client_related"><i class="users icon"></i>相关客户</a>
+            {% if groups %}<a class="item" data-tab="groups"><i class="users icon"></i>所在分组</a>{% endif %}
         </div>
         <div class="ui tab segment active" data-tab="client_info">
             <h3 class="ui header">
@@ -154,6 +155,7 @@ DSM客户档案管理
         <div class="ui tab segment" data-tab="client_related">
             {% if clients_same_hosp_dept %}
             <h3 class="header">同事</h3>
+            <div class="ui divider"></div>
             <table class="ui table" id="client_same_hosp_dept">
                 <thead>
                 <tr>
@@ -182,6 +184,7 @@ DSM客户档案管理
             {% endif %}
             {% if clients_related %}
             <h3 class="header">同一DSM名下潜力相近客户</h3>
+            <div class="ui divider"></div>
             <table class="ui table" id="client-related">
                 <thead>
                 <tr>
@@ -209,8 +212,33 @@ DSM客户档案管理
             </table>
             {% endif %}
         </div>
+                {% if groups %}
+        <div class="ui tab segment" data-tab="groups">
+            <h3 class="header">客户所在分组事件</h3>
+            <div class="ui divider"></div>
+            <table class="ui table" id="groups">
+                <thead>
+                <tr>
+                    <th style="display:none">id</th>
+                    <th>所在分组</th>
+                    <th>创建者</th>
+                    <th>创建时间</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for group in groups %}
+                <tr>
+                    <td style="display:none">{{ group.pk }}</td>
+                    <td style="width: 50%"><a href="{% url 'clientfile:group_detail' group.pk %}">{{ group.name }}</a></td>
+                    <td style="width: 20%">{{ group.created_by }}</td>
+                    <td style="width: 30%">{{ group.pub_date }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
     </div>
-
     </div>
 </div>
 

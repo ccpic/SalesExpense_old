@@ -256,6 +256,7 @@ def clients(request):
 def client_detail(request, id):
     client = Client.objects.get(pk=id)
     client_monthly_patients = client.monthly_patients()
+    groups = Group.objects.filter(clients__pk=id)
 
     # 全国潜力分位
     pct_rank = get_pct_rank(client_monthly_patients, Client.objects.all())
@@ -300,6 +301,7 @@ def client_detail(request, id):
     clients_related = Client.objects.filter(id__in=related_ids)
     context = {
         'client': client,
+        'groups': groups,
         'clients_related': clients_related,
         'clients_same_hosp_dept': clients_same_hosp_dept,
         'pct_rank': pct_rank,
