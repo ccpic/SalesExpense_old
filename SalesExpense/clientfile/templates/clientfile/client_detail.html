@@ -19,7 +19,7 @@ DSM客户档案管理
 <div id="pusher" class="pusher" style="padding-top:100px">
     <div class="ui container">
         <div class="ui huge breadcrumb">
-            <div class="section">客户档案</div>
+            <div class="section">{{ client.bu }}</div>
             <i class="right chevron icon divider"></i>
             <div class="section">{{ client.rd }}</div>
             <i class="right chevron icon divider"></i>
@@ -109,6 +109,15 @@ DSM客户档案管理
                         <td>
                             <div class="ui {{ pct_rank_same_province|value_to_color }} basic label">
                                 潜力高于该省{{ pct_rank_same_province|percentage:1 }}的客户
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><h5 class="ui header">所属团队</h5></td>
+                        <td><span>{{ client.bu }}</span></td>
+                        <td>
+                            <div class="ui {{ pct_rank_same_bu|value_to_color }} basic label">
+                                潜力高于{{ client.bu }}{{ pct_rank_same_bu|percentage:1 }}的客户
                             </div>
                         </td>
                     </tr>

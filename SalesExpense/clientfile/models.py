@@ -112,9 +112,22 @@ TITLE_CHOICES = [
     ('住院医师', '住院医师'),
     ('其他', '其他'),
 ]
+BU_CHOICES = [
+    ('血压团队', '血压团队'),
+    ('血栓团队', '血栓团队'),
+]
+RD_CHOICES = [
+    ('华东区', '华东区'),
+    ('华西区', '华西区'),
+    ('华南区', '华南区'),
+    ('华北区', '华北区'),
+    ('华中区', '华中区'),
+]
+
 
 class Client(SoftDeletableModel):
-    rd = models.CharField(max_length=10, verbose_name='所属区域')
+    bu = models.CharField(max_length=10, choices=BU_CHOICES, verbose_name='所属团队')
+    rd = models.CharField(max_length=10, choices=RD_CHOICES, verbose_name='所属区域')
     rm = models.CharField(max_length=10, verbose_name='所属大区')
     dsm = models.CharField(max_length=10, verbose_name='所属经理')
     rsp = models.CharField(max_length=10, verbose_name='负责代表')
@@ -138,7 +151,7 @@ class Client(SoftDeletableModel):
     class Meta:
         verbose_name = '客户档案'
         verbose_name_plural = '客户档案'
-        ordering = ['rd', 'rm', 'dsm', 'rsp', 'hospital', 'dept', 'name']
+        ordering = ['bu', 'rd', 'rm', 'dsm', 'rsp', 'hospital', 'dept', 'name']
         # unique_together = ('rsp', 'hospital', 'dept', 'name')
         constraints = [
             UniqueConstraint(fields=['rsp', 'hospital', 'dept', 'name'], condition=Q(is_deleted=False),
@@ -146,7 +159,7 @@ class Client(SoftDeletableModel):
         ]
 
     def __str__(self):
-        return "%s %s %s %s %s %s %s" % (self.rd, self.rm, self.dsm, self.rsp, self.hospital, self.dept, self.name)
+        return "%s %s %s %s %s %s %s %s" % (self.bu, self.rd, self.rm, self.dsm, self.rsp, self.hospital, self.dept, self.name)
 
     def monthly_patients(self):
         return round(self.consulting_times * self.patients_half_day * self.target_prop / 100, 0)

@@ -6,6 +6,7 @@
     {% for client in client_list %}
     <a class="ui card" href="{% url 'clientfile:client_detail' client.pk %}">
         <div class="content">
+            <div class="meta" style="float: right">{{ client.bu }}</div>
             <div class="header">{{ client.name }}</div>
         </div>
         <div class="content">

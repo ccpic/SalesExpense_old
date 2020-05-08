@@ -45,6 +45,7 @@ D_SEARCH_FIELD = {
 
 D_SELECT = {
     '省/自治区/直辖市': 'province-select[]',
+    '团队': 'bu-select[]',
     '区域': 'rd-select[]',
     '大区': 'rm-select[]',
     '地区经理': 'dsm-select[]',
@@ -60,6 +61,7 @@ D_SELECT = {
 
 D_FIELD = {
     '省/自治区/直辖市': 'province',
+    '团队': 'bu',
     '区域': 'rd',
     '大区': 'rm',
     '地区经理': 'dsm',
@@ -96,6 +98,7 @@ D_TRANSLATE = {
 }
 
 COL = [
+    '团队',
     '区域',
     '大区',
     '地区经理',
@@ -116,6 +119,7 @@ COL = [
 ]
 
 COL_REINDEX = [
+    '团队',
     '区域',
     '大区',
     '地区经理',
@@ -147,21 +151,22 @@ def clients(request):
     else:
         # 查询常数设置
         ORDER_DICT = {
-            0: "rd",
-            1: "rm",
-            2: "dsm",
-            3: "rsp",
-            4: "hospital",
-            5: "hp_level",
-            6: "name",
-            7: "dept",
-            8: "title",
-            9: "consulting_times",
-            10: "patients_half_day",
-            11: "target_prop",
-            12: "note",
-            13: "monthly_target_patients",
-            14: 'potential_level',
+            0: "bu",
+            1: "rd",
+            2: "rm",
+            3: "dsm",
+            4: "rsp",
+            5: "hospital",
+            6: "hp_level",
+            7: "name",
+            8: "dept",
+            9: "title",
+            10: "consulting_times",
+            11: "patients_half_day",
+            12: "target_prop",
+            13: "note",
+            14: "monthly_target_patients",
+            15: 'potential_level',
         }
 
         dataTable = {}
@@ -179,7 +184,7 @@ def clients(request):
             if item['name'] == "sSortDir_0":
                 sort_order = item['value'].lower()  # 正序还是反序
             if item['name'] == "sSearch":
-                search_key = item['value']  # 正序还是反序
+                search_key = item['value']  # 搜索关键字
 
         # 根据前端返回筛选参数筛选
         context = get_context_from_form(request)
@@ -189,17 +194,17 @@ def clients(request):
 
         # 排序
         result_length = clients.count()
-        if sort_column < 13:
+        if sort_column < 43:
             if sort_order == 'asc':
                     clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]))
             elif sort_order == 'desc':
                 clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]), reverse=True)
-        elif sort_column == 13:
+        elif sort_column == 14:
             if sort_order == 'asc':
                 clients = sorted(clients, key=lambda a: a.monthly_patients())
             elif sort_order == 'desc':
                 clients = sorted(clients, key=lambda a: a.monthly_patients(), reverse=True)
-        elif sort_column == 14:
+        elif sort_column == 15:
             if sort_order == 'asc':
                 clients = sorted(clients, key=lambda a: a.potential_level())
             elif sort_order == 'desc':
@@ -223,7 +228,8 @@ def clients(request):
                 potential_level = 'M'
             elif item.potential_level() == 3:
                 potential_level = 'H'
-            row = {"rd": item.rd,
+            row = {"bu": item.bu,
+                   "rd": item.rd,
                    "rm": item.rm,
                    "dsm": item.dsm,
                    "rsp": item.rsp,
@@ -268,6 +274,7 @@ def client_detail(request, id):
     # 同医院同科室潜力分位
     clients_same_hosp_dept = Client.objects.filter(hospital=client.hospital, dept=client.dept)
     pct_rank_same_hosp_dept = get_pct_rank(client_monthly_patients, clients_same_hosp_dept)
+    clients_same_hosp_dept = clients_same_hosp_dept.exclude(pk=id)
 
     # 同医院同科室同职称潜力分位
     clients_same_hosp_dept_title = Client.objects.filter(hospital=client.hospital, dept=client.dept, title=client.title)
@@ -276,6 +283,10 @@ def client_detail(request, id):
     # 同省份潜力分位
     clients_same_province = Client.objects.filter(province=client.province)
     pct_rank_same_province = get_pct_rank(client_monthly_patients, clients_same_province)
+
+    # 同bu潜力分位
+    clients_same_bu = Client.objects.filter(bu=client.bu)
+    pct_rank_same_bu = get_pct_rank(client_monthly_patients, clients_same_bu)
 
     # 同rd潜力分位
     clients_same_rd = Client.objects.filter(rd=client.rd)
@@ -297,8 +308,9 @@ def client_detail(request, id):
     client_monthly_patients_lb = client_monthly_patients * 0.95
     client_monthly_patients_ub = client_monthly_patients * 1.05
     related_ids = [client.id for client in clients_same_dsm if client_monthly_patients_lb < client.monthly_patients() < client_monthly_patients_ub]
-    print(related_ids)
     clients_related = Client.objects.filter(id__in=related_ids)
+    clients_related = clients_related.exclude(pk=id)
+
     context = {
         'client': client,
         'groups': groups,
@@ -309,6 +321,7 @@ def client_detail(request, id):
         'pct_rank_same_hosp_dept': pct_rank_same_hosp_dept,
         'pct_rank_same_hosp_dept_title': pct_rank_same_hosp_dept_title,
         'pct_rank_same_province': pct_rank_same_province,
+        'pct_rank_same_bu': pct_rank_same_bu,
         'pct_rank_same_rd': pct_rank_same_rd,
         'pct_rank_same_rm': pct_rank_same_rm,
         'pct_rank_same_dsm': pct_rank_same_dsm,
@@ -316,6 +329,7 @@ def client_detail(request, id):
     }
 
     return render(request, 'clientfile/client_detail.html', context)
+
 
 @login_required()
 def export_clients(request):
@@ -355,6 +369,7 @@ def import_excel(request):
         else:
             try:
                 df = pd.read_excel(excel_file, sheet_name=SHEET_NAME)  # 检查目标工作表不存在错误
+                print(df)
             except xlrd.biffh.XLRDError as e:
                 if 'No sheet' in e.args[0]:
                     context['msg'] = '上传Excel没有名为"' + SHEET_NAME + '"的工作表'
@@ -369,7 +384,7 @@ def import_excel(request):
                 else:
                     if dsm_auth(request.user, df['地区经理'].unique())[0] is False:  # 权限检查，只能上传自己/下属dsm的数据
                         context['msg'] = '权限错误，只能上传自己/下属dsm的数据，你没有权限上传下列dsm的数据' + \
-                                         str(dsm_auth(request.user, df[COL[2]].unique())[1])
+                                         str(dsm_auth(request.user, df[COL[3]].unique())[1])
                         return JsonResponse(context)
                     else:
                         d_error = validate(df)
@@ -393,6 +408,8 @@ def import_excel(request):
 
 def validate(df):
     d_error = {}
+    list_bu = [x[0] for x in BU_CHOICES]
+    list_rd = [x[0] for x in RD_CHOICES]
     list_dept = [x[0] for x in DEPT_CHOICES]
     list_hplevel =  [x[0] for x in HPLEVEL_CHOICES]
     list_province = [x[0] for x in PROVINCE_CHOICES]
@@ -400,7 +417,8 @@ def validate(df):
 
     NullValidation = CustomElementValidation(lambda d: d is not np.nan, '该字段不能为空')
     schema = Schema([
-        Column('区域', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+        Column('团队', [InListValidation(list_bu)]),
+        Column('区域', [InListValidation(list_rd)]),
         Column('大区', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
         Column('地区经理', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
         Column('负责代表', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
@@ -550,7 +568,7 @@ def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_
                           )
     df_clients = pd.DataFrame(list(clients.values()))
     if df_clients.empty is False:
-        df_new = df_clients.reindex(columns=['rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',
+        df_new = df_clients.reindex(columns=['bu', 'rd', 'rm', 'dsm', 'rsp', 'xlt_id', 'hospital', 'province', 'dual_call',
                                              'hp_level', 'hp_access', 'name', 'dept', 'title', 'consulting_times',
                                              'patients_half_day', 'target_prop', 'note'])
 
@@ -594,23 +612,24 @@ def import_record(df):
     Client.objects.filter(dsm__in=df['地区经理'].unique()).delete()
 
     for index, row in df.iterrows():
-        client = Client.objects.update_or_create(rd=row[COL[0]],
-                                                 rm=row[COL[1]],
-                                                 dsm=row[COL[2]],
-                                                 rsp=row[COL[3]],
-                                                 xlt_id=row[COL[4]],
-                                                 hospital=row[COL[5]],
-                                                 province=row[COL[6]],
-                                                 dual_call=row[COL[7]],
-                                                 hp_level=row[COL[8]],
-                                                 hp_access=row[COL[9]],
-                                                 name=row[COL[10]],
-                                                 dept=row[COL[11]],
-                                                 title=row[COL[12]],
-                                                 consulting_times=row[COL[13]],
-                                                 patients_half_day=row[COL[14]],
-                                                 target_prop=row[COL[15]],
-                                                 note=row[COL[16]]
+        client = Client.objects.update_or_create(bu=row[COL[0]],
+                                                 rd=row[COL[1]],
+                                                 rm=row[COL[2]],
+                                                 dsm=row[COL[3]],
+                                                 rsp=row[COL[4]],
+                                                 xlt_id=row[COL[5]],
+                                                 hospital=row[COL[6]],
+                                                 province=row[COL[7]],
+                                                 dual_call=row[COL[8]],
+                                                 hp_level=row[COL[9]],
+                                                 hp_access=row[COL[10]],
+                                                 name=row[COL[11]],
+                                                 dept=row[COL[12]],
+                                                 title=row[COL[13]],
+                                                 consulting_times=row[COL[14]],
+                                                 patients_half_day=row[COL[15]],
+                                                 target_prop=row[COL[16]],
+                                                 note=row[COL[17]]
                                                  )
 
 

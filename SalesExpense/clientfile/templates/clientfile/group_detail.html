@@ -80,6 +80,7 @@ DSM客户档案管理
                                 <thead>
                                 <tr>
                                     <th style="display:none">id</th>
+                                    <th>团队</th>
                                     <th>医院</th>
                                     <th>科室</th>
                                     <th>姓名</th>
@@ -90,6 +91,7 @@ DSM客户档案管理
                                 {% for client in group.clients_all_with_deleted %}
                                 <tr>
                                     <td style="display:none">{{ client.pk }}</td>
+                                    <td>{{ client.bu }}</td>
                                     <td>{{ client.hospital }}</td>
                                     <td>{{ client.dept }}</td>
                                     <td><a href="{% url 'clientfile:client_detail' client.pk %}">{{ client.name }}</a></td>
