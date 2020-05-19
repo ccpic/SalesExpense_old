@@ -18,7 +18,7 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:60px">
     <div class="ui hidden divider"></div>
-    {% if request.user|has_group:"地区经理" or request.user.is_staff %}
+    {% if request.user|has_group:"地区经理" %}
         <div class="ui container">
             <h2 class="ui blue dividing header">导入Excel</h2>
             <a href="{% static 'media/客户档案模板.xlsx' %}">下载客户档案模板</a>
@@ -40,6 +40,11 @@ DSM客户档案管理
         </div>
         <div class="ui hidden divider"></div>
     {% endif %}
+    <div class="ui left rail">
+        <div class="ui segment">
+          Left Rail Content
+        </div>
+      </div>
     <div class="ui container">
         <h2 class="ui blue dividing header">现有档案</h2>
         <div class="ui labeled button" tabindex="0">

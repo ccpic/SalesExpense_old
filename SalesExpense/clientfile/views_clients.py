@@ -31,6 +31,7 @@ pd.set_option('display.width', 5000)
 
 D_SEARCH_FIELD = {
     '省/自治区/直辖市': 'province',
+    '团队': 'bu',
     '区域': 'rd',
     '大区': 'rm',
     '地区经理': 'dsm',
@@ -492,6 +493,7 @@ def dsm_auth(user, dsm_list):
 
 def get_clients(user, context=None, search_key=None, is_deleted=False, group_id=None, pub_date_gte=None, name_and_hosp=None):
     or_condiction = Q()
+
     if context is not None:
         for key, value in D_FIELD.items():
             if len(context[key]) > 0:
