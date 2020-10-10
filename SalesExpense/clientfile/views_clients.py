@@ -31,7 +31,7 @@ pd.set_option('display.width', 5000)
 
 D_SEARCH_FIELD = {
     '省/自治区/直辖市': 'province',
-    '团队': 'bu',
+    '南北中国': 'bu',
     '区域': 'rd',
     '大区': 'rm',
     '地区经理': 'dsm',
@@ -46,7 +46,7 @@ D_SEARCH_FIELD = {
 
 D_SELECT = {
     '省/自治区/直辖市': 'province-select[]',
-    '团队': 'bu-select[]',
+    '南北中国': 'bu-select[]',
     '区域': 'rd-select[]',
     '大区': 'rm-select[]',
     '地区经理': 'dsm-select[]',
@@ -62,7 +62,7 @@ D_SELECT = {
 
 D_FIELD = {
     '省/自治区/直辖市': 'province',
-    '团队': 'bu',
+    '南北中国': 'bu',
     '区域': 'rd',
     '大区': 'rm',
     '地区经理': 'dsm',
@@ -99,7 +99,7 @@ D_TRANSLATE = {
 }
 
 COL = [
-    '团队',
+    '南北中国',
     '区域',
     '大区',
     '地区经理',
@@ -120,7 +120,7 @@ COL = [
 ]
 
 COL_REINDEX = [
-    '团队',
+    '南北中国',
     '区域',
     '大区',
     '地区经理',
@@ -418,7 +418,7 @@ def validate(df):
 
     NullValidation = CustomElementValidation(lambda d: d is not np.nan, '该字段不能为空')
     schema = Schema([
-        Column('团队', [InListValidation(list_bu)]),
+        Column('南北中国', [InListValidation(list_bu)]),
         Column('区域', [InListValidation(list_rd)]),
         Column('大区', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
         Column('地区经理', [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),

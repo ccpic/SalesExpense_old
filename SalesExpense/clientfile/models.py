@@ -113,20 +113,20 @@ TITLE_CHOICES = [
     ('其他', '其他'),
 ]
 BU_CHOICES = [
-    ('血压团队', '血压团队'),
-    ('血栓团队', '血栓团队'),
+    ('北中国', '北中国'),
+    ('南中国', '南中国'),
 ]
 RD_CHOICES = [
     ('华东区', '华东区'),
-    ('华西区', '华西区'),
-    ('华南区', '华南区'),
     ('华北区', '华北区'),
+    ('华南区', '华南区'),
+    ('华北区-特', '华北区-特'),
     ('华中区', '华中区'),
 ]
 
 
 class Client(SoftDeletableModel):
-    bu = models.CharField(max_length=10, choices=BU_CHOICES, verbose_name='所属团队')
+    bu = models.CharField(max_length=10, choices=BU_CHOICES, verbose_name='南北中国')
     rd = models.CharField(max_length=10, choices=RD_CHOICES, verbose_name='所属区域')
     rm = models.CharField(max_length=10, verbose_name='所属大区')
     dsm = models.CharField(max_length=10, verbose_name='所属经理')
