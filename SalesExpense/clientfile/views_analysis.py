@@ -35,8 +35,8 @@ def analysis(request):
     if request.is_ajax():
         return render(request, 'clientfile/client_cards.html', context)
     else:
-        context['field_list'] = D_FIELD
-        for key, value in context['field_list'].items():
+        context['field_list'] = {}
+        for key, value in D_FIELD.items():
             context['field_list'][key] = {}
             context['field_list'][key]['select'] = D_SELECT[key]
             context['field_list'][key]['options'] = get_unique(clients, value)
@@ -193,6 +193,7 @@ def ajax_table(request, index):
 def get_unique(qs, field):
     unique_list = []
     for query in qs:
+        # print(query, field)
         str = getattr(query, field)
         if str is True:
             str = "是"
