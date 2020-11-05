@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.db.models.query import QuerySet
-from django.db.models import Q, UniqueConstraint
+from django.db.models import Q, UniqueConstraint, Max
 
 
 class SoftDeleteQuerySet(QuerySet):
@@ -33,6 +33,10 @@ class SoftDeletableManager(models.Manager):
         if 'pk' in kwargs:
             return self.all_with_deleted().filter(*args, **kwargs)
         return self.get_queryset().filter(*args, **kwargs)
+
+    def max_pub_id(self, *args, **kwargs):
+        objs = self.all_with_deleted()
+        return objs.aggregate(Max('pub_id'))['pub_id__max']
 
 
 class SoftDeletableModel(models.Model):
@@ -147,6 +151,7 @@ class Client(SoftDeletableModel):
     # monthly_prescription = models.IntegerField(verbose_name='当前月处方量')
     note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
     pub_date = models.DateTimeField(verbose_name='上传日期',auto_now=True)
+    pub_id = models.IntegerField(verbose_name='上传编号')
 
     class Meta:
         verbose_name = '客户档案'
@@ -237,3 +242,23 @@ class Hp_IQVIA(models.Model):
 
     def __str__(self):
         return "%s %s %s" % (self.xlt_id, self.name, self.decile)
+
+
+# class History(models.Model):
+#     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_group', verbose_name='创建用户')
+#     clients_number_h = models.IntegerField(verbose_name='高潜客户档案数量')
+#     clients_number_m = models.IntegerField(verbose_name='中潜力客户档案数量')
+#     clients_number_l = models.IntegerField(verbose_name='低潜力客户档案数量')
+#     clients_potential_high = models.IntegerField(verbose_name='高潜客户档案总潜力')
+#     clients_potential_mid = models.IntegerField(verbose_name='中潜客户档案总潜力')
+#     clients_potential_low = models.IntegerField(verbose_name='低潜客户档案总潜力')
+#     pub_date = models.DateTimeField(verbose_name='创建日期', auto_now=True)
+#
+#
+#     class Meta:
+#         verbose_name = '操作历史'
+#         verbose_name_plural = '操作历史'
+#         ordering = ['-pub_date']
+#
+#     def __str__(self):
+#         return self.name
