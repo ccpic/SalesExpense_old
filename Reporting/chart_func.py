@@ -8,6 +8,8 @@ import types
 from adjustText import adjust_text
 import itertools
 import matplotlib.cm as cm
+import matplotlib.gridspec as gridspec
+from pandas.api.types import is_numeric_dtype
 
 mpl.rcParams["font.sans-serif"] = ["SimHei"]
 mpl.rcParams["font.serif"] = ["SimHei"]
@@ -101,12 +103,95 @@ def get_cmap(n, name="hsv"):
     return plt.cm.get_cmap(name, n)
 
 
+def plot_grid_barh(df, savefile, formats, fontsize=16, width=15, height=6):
+    fig = plt.figure(figsize=(width, height), facecolor="white")
+
+    gs = gridspec.GridSpec(1, df.shape[1])  # 布局为1行多列
+    gs.update(wspace=0, hspace=0)  # grid各部分之间紧挨，space设为0.
+
+    for i in range(df.shape[1]):
+        ax = plt.subplot(gs[i])
+        df_bar = df.iloc[:, i]
+
+        ax = df_bar.plot(kind="barh", alpha=0.8, color=color_list[i], edgecolor="black", zorder=3)
+        for j, v in enumerate(df_bar.values):
+            ax.text(v / 2, j, formats[i].format(v), ha="center", va="center", color="white", fontsize=fontsize)
+            ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
+
+        ax.invert_yaxis()  # 翻转y轴，最上方显示排名靠前的序列
+
+        # 删除x,y轴所有的刻度标签，只保留最左边一张图的y轴刻度标签
+        if i > 0:
+            ax.set_yticklabels([])
+        ax.set_xticklabels([])
+
+        ax.set_xlabel(df.columns[i], fontproperties=myfont, fontsize=14)  # x轴标题为df的列名
+        ax.xaxis.set_label_position("top")  # x轴标题改为在图表上方
+        ax.yaxis.label.set_visible(False)  # 删除y轴标题
+
+    # Save the figure
+    plt.savefig(savefile, format="png", bbox_inches="tight", dpi=600)
+
+    # Close
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+
+def plot_hist(
+    df, savefile, bins=100, has_kde=False, tiles=10, xlim=None, title=None, xlabel=None, ylabel=None, width=15, height=6
+):
+    fig, ax = plt.subplots(figsize=(width, height))
+    df.plot(kind="hist", density=True, bins=bins)
+    if has_kde:
+        df.plot(kind="kde")
+
+    if xlim is not None:
+        ax.set_xlim(xlim[0], xlim[1])  # 设置x轴显示limit
+
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_yticks([])  # 删除y轴刻度
+    ax.set_ylabel(ylabel)
+
+    # 计算百分位数据
+    percentiles = []
+    for i in range(tiles):
+        percentiles.append([df.quantile((i) / tiles), "D" + str(i + 1)])  # 十分位Decile
+
+    # 在hist图基础上绘制百分位
+    for i, percentile in enumerate(percentiles):
+        ax.axvline(percentile[0], color="crimson", linestyle=":")  # 竖分隔线
+        ax.text(percentile[0], ax.get_ylim()[1] * 0.95, int(percentile[0]), ha="center")
+        if i < tiles - 1:
+            ax.text(
+                percentiles[i][0] + (percentiles[i + 1][0] - percentiles[i][0]) / 2,
+                ax.get_ylim()[1],
+                percentile[1],
+                ha="center",
+            )
+        else:
+            ax.text(
+                percentiles[tiles - 1][0] + (ax.get_xlim()[1] - percentiles[tiles - 1][0]) / 2,
+                ax.get_ylim()[1],
+                percentile[1],
+                ha="center",
+            )
+    # Save the figure
+    plt.savefig(savefile, format="png", bbox_inches="tight", dpi=600)
+
+    # Close
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+
 def plot_line(
     df,
     savefile,
     colormap="tab10",
-    width=12,
-    height=5,
+    width=15,
+    height=6,
     xlabelrotation=0,
     ylabelperc=False,
     title="",
@@ -211,7 +296,7 @@ def plot_line(
     plt.close()
 
 
-def plot_line_simple(df, savefile, width=15, height=9, xlabelrotation=0, yfmt="{:.0%}", title="", xtitle="", ytitle=""):
+def plot_line_simple(df, savefile, width=15, height=6, xlabelrotation=0, yfmt="{:.0%}", title="", xtitle="", ytitle=""):
     # Choose seaborn style
     sns.set_style("white")
 
@@ -255,13 +340,89 @@ def plot_line_simple(df, savefile, width=15, height=9, xlabelrotation=0, yfmt="{
     plt.close()
 
 
-def plot_pie(sizelist, labellist, savefile, width=6, height=6, title=None, color_dict=None):
-    sns.set_style("white")
+def plot_barh(
+    df,
+    savefile,
+    stacked=True,
+    width=15,
+    height=6,
+    xfmt="{:.0f}",
+    yfmt="{:.0%}",
+    labelfmt="{:.0%}",
+    title=None,
+    xtitle=None,
+    ytitle=None,
+    ymin=None,
+    ymax=None,
+    haslegend=True,
+):
+    colors = []
+    for item in df.columns.tolist():
+        colors.append(color_dict[item])
+    ax = df.plot(kind="barh", stacked=stacked, figsize=(width, height), alpha=0.8, edgecolor="black", color=colors)
+    plt.title(title, fontproperties=myfont, fontsize=18)
+    plt.xlabel(xtitle, fontproperties=myfont)
+    plt.ylabel(ytitle, fontproperties=myfont)
+    plt.axvline(x=0, linewidth=2, color="r")
+
+    if haslegend == True:
+        plt.legend(loc="center left", bbox_to_anchor=(1.0, 0.5), prop=myfont, fontsize=12)
+    else:
+        plt.legend(prop=myfont)
+
+    # plt.setp(ax.get_xticklabels(), rotation=0, horizontalalignment='center')
+    #
+    # ax.xaxis.set_major_formatter(FuncFormatter(lambda y, _: xfmt.format(y)))
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: yfmt.format(y)))
+    # ax.set_ylim([ymin, ymax])
+
+    # Add value label
+    labels = []
+    for j in df.columns:
+        for i in df.index:
+            label = str(df.loc[i][j])
+            labels.append(label)
+
+    patches = ax.patches
+
+    for label, rect in zip(labels, patches):
+        height = rect.get_height()
+        if height > 0.015:
+            x = rect.get_x()
+            y = rect.get_y()
+            width = rect.get_width()
+            if abs(width) < 3000000:
+                color = "black"
+            else:
+                color = "white"
+            ax.text(
+                x + width / 2.0,
+                y + height / 2.0,
+                labelfmt.format(float(label)),
+                ha="center",
+                va="center",
+                color=color,
+                fontproperties=myfont,
+                fontsize=10,
+            )
+
+    # Save the figure
+    plt.savefig(savefile, format="png", bbox_inches="tight", transparent=True, dpi=600)
+
+    # Close
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+
+def plot_pie(savefile, sizelist, labellist, focus, title):
+    # sns.set_style("white")
 
     # Prepare the white center circle for Donat shape
     my_circle = plt.Circle((0, 0), 0.7, color="white")
 
     sizelist = sizelist.transform(lambda x: x / x.sum())
+    print(sizelist)
     sizelist_mask = []
     for size in sizelist:
         sizelist_mask.append(abs(size))
@@ -274,14 +435,16 @@ def plot_pie(sizelist, labellist, savefile, width=6, height=6, title=None, color
         pctdistance=0.85,
         wedgeprops={"linewidth": 3, "edgecolor": "white"},
         textprops={"family": "Simhei"},
+        counterclock=False,
+        startangle=90,
     )
 
     for i, pie_wedge in enumerate(wedges):
-        if color_dict is not None:
-            pie_wedge.set_facecolor(color_dict[pie_wedge.get_label()])
+        # pie_wedge.set_facecolor(color_dict[pie_wedge.get_label()])
 
-        if pie_wedge.get_label() == "泰嘉":
-            pie_wedge.set_hatch("//")
+        if focus is not None:
+            if pie_wedge.get_label() == focus:
+                pie_wedge.set_hatch("//")
         if sizelist[i] < 0:
             pie_wedge.set_facecolor("white")
 
@@ -297,106 +460,11 @@ def plot_pie(sizelist, labellist, savefile, width=6, height=6, title=None, color
 
     # Combine circle part and pie part
     fig = plt.gcf()
-    fig.set_size_inches(width, height)
+    fig.set_size_inches(6, 6)
     fig.gca().add_artist(my_circle)
 
     # Save
-    plt.savefig(savefile, format="png", bbox_inches="tight", dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
-
-
-def plot_bubble_m(
-    x,
-    y,
-    z,
-    labels,
-    savefile,
-    avggr=None,
-    width=12,
-    height=5,
-    xfmt="{:.0%}",
-    yfmt="{:+.0%}",
-    ylabel="市场平均\n增长率",
-    xavgline=False,
-    avgms=None,
-    title=None,
-    xtitle=None,
-    ytitle=None,
-    ymin=None,
-    ymax=None,
-    label_fontsize=16,
-    color_dict=None,
-):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(width, height)
-
-    if color_dict == None:
-        colors = iter(cm.bwr(np.linspace(0, 1, len(y))))
-
-    if avggr is not None:
-        ax.axhline(avggr, linestyle="--", linewidth=1, color="r")
-    if xavgline == True:
-        ax.axvline(avgms, linestyle="--", linewidth=1, color="r")
-    for i in range(len(x)):
-        if color_dict == None:
-            ax.scatter(x[i], y[i], z[i], color=next(colors), alpha=0.6, edgecolors="black")
-        else:
-            ax.scatter(x[i], y[i], z[i], color=color_dict[labels[i]], alpha=0.6, edgecolors="black")
-    # ax.scatter(x, y, s=z, c=color, alpha=0.6, edgecolors="grey")
-    # ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
-
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda y, _: xfmt.format(y)))
-    ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: yfmt.format(y)))
-    ax.set_ylim([ymin, ymax])
-
-    np.random.seed(0)
-    # for i, txt in enumerate(labels):
-    #     text = plt.text(x[i],y[i], txt+"\n"+ '('+ str("{:.1%}".format(x[i])) +', ' + str("{:.1%}".format(y[i])) + ')', ha='center', va='center')
-    texts = [
-        plt.text(
-            x[i],
-            y[i],
-            labels[i],
-            ha="center",
-            va="center",
-            multialignment="center",
-            fontproperties=myfont,
-            fontsize=label_fontsize,
-        )
-        for i in range(len(labels))
-    ]
-    adjust_text(texts, force_text=0.05, arrowprops=dict(arrowstyle="->", color="black"))
-    if avggr is not None:
-        plt.text(
-            ax.get_xlim()[1],
-            avggr,
-            ylabel + ":\n" + yfmt.format(avggr),
-            ha="left",
-            va="center",
-            color="r",
-            multialignment="center",
-        )
-    if xavgline == True:
-        plt.text(
-            avgms,
-            ax.get_ylim()[1],
-            "全国平均\n份额:\n" + xfmt.format(avgms),
-            ha="left",
-            va="top",
-            color="r",
-            multialignment="center",
-        )
-
-    plt.title(title, fontproperties=myfont, fontsize=20)
-    plt.xlabel(xtitle, fontproperties=myfont)
-    plt.ylabel(ytitle, fontproperties=myfont)
-
-    # Save
-    plt.savefig(savefile, format="png", bbox_inches="tight", transparent=True, dpi=600)
+    plt.savefig(savefile, format="png", transparent=True, bbox_inches="tight", dpi=600)
 
     # Close
     plt.clf()
@@ -405,88 +473,103 @@ def plot_bubble_m(
 
 
 def plot_bubble(
+    savefile,
     x,
     y,
     z,
-    avggr,
     labels,
-    savefile,
-    width=12,
-    height=5,
-    xfmt="{:.1%}",
-    yfmt="{:+.1%}",
-    ylabel="市场平均\n增长率",
+    title,
+    xtitle,
+    ytitle,
+    z_scale=1,
+    xfmt="{:.0%}",
+    yfmt="{:+.0%}",
+    yavgline=False,
+    yavg=None,
+    ylabel="",
     xavgline=False,
-    avgms=None,
-    title=None,
-    xtitle=None,
-    ytitle=None,
-    ymin=None,
-    ymax=None,
-    fontsize=14,
+    xavg=None,
+    xlabel="",
+    ylim=None,
+    xlim=None,
+    showLabel=True,
+    labelLimit=15,
 ):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(width, height)
 
-    ax.axhline(avggr, linestyle="--", linewidth=1, color="r")
-    if xavgline == True:
-        ax.axvline(avgms, linestyle="--", linewidth=1, color="r")
+    fig, ax = plt.subplots()
+    fig.set_size_inches(14, 7)
+
+    if ylim is not None:
+        ax.set_ylim(ymin=ylim[0], ymax=ylim[1])
+    if xlim is not None:
+        ax.set_xlim(xmin=xlim[0], xmax=xlim[1])
+
+    cmap = mpl.colors.ListedColormap(np.random.rand(256, 3))
+    colors = iter(cmap(np.linspace(0, 1, len(y))))
+
     for i in range(len(x)):
-        ax.scatter(x[i], y[i], z[i], color=color_list[i], alpha=0.6, edgecolors="black")
+        ax.scatter(x[i], y[i], z[i]*z_scale, color=next(colors), alpha=0.6, edgecolors="black")
+    if yavgline == True:
+        ax.axhline(yavg, linestyle="--", linewidth=1, color="r")
+    if xavgline == True:
+        ax.axvline(xavg, linestyle="--", linewidth=1, color="r")
     # ax.scatter(x, y, s=z, c=color, alpha=0.6, edgecolors="grey")
     # ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
 
     ax.xaxis.set_major_formatter(FuncFormatter(lambda y, _: xfmt.format(y)))
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: yfmt.format(y)))
-    ax.set_ylim([ymin, ymax])
 
     np.random.seed(0)
     # for i, txt in enumerate(labels):
     #     text = plt.text(x[i],y[i], txt+"\n"+ '('+ str("{:.1%}".format(x[i])) +', ' + str("{:.1%}".format(y[i])) + ')', ha='center', va='center')
-    texts = [
+    if showLabel is True:
+        texts = [
+            plt.text(
+                x[i],
+                y[i],
+                labels[i],
+                ha="center",
+                va="center",
+                multialignment="center",
+                fontproperties=myfont,
+                fontsize=10,
+            )
+            for i in range(len(labels[:labelLimit]))
+        ]
+        adjust_text(texts, force_text=0.1, arrowprops=dict(arrowstyle="->", color="black"))
+
+    if yavgline == True:
         plt.text(
-            x[i],
-            y[i],
-            labels[i] + "\n" + "(" + str(xfmt.format(x[i])) + ", " + str(yfmt.format(y[i])) + ")",
-            ha="center",
+            ax.get_xlim()[1],
+            yavg,
+            ylabel,
+            ha="left",
             va="center",
+            color="r",
             multialignment="center",
             fontproperties=myfont,
-            fontsize=fontsize,
+            fontsize=10,
         )
-        for i in range(len(labels))
-    ]
-    adjust_text(texts, force_text=0.05, arrowprops=dict(arrowstyle="->", color="black"))
-    plt.text(
-        ax.get_xlim()[1],
-        avggr,
-        ylabel + ":\n" + yfmt.format(avggr),
-        ha="left",
-        va="center",
-        color="r",
-        multialignment="center",
-        fontproperties=myfont,
-        fontsize=fontsize,
-    )
     if xavgline == True:
         plt.text(
-            avgms,
+            xavg,
             ax.get_ylim()[1],
-            "全国平均\n份额:\n" + xfmt.format(avgms),
+            xlabel,
             ha="left",
             va="top",
             color="r",
             multialignment="center",
             fontproperties=myfont,
-            fontsize=fontsize,
+            fontsize=10,
         )
 
-    plt.title(title, fontproperties=myfont, fontsize=20)
-    plt.xlabel(xtitle, fontproperties=myfont)
-    plt.ylabel(ytitle, fontproperties=myfont)
+    plt.title(title, fontproperties=myfont)
+    plt.xlabel(xtitle, fontproperties=myfont, fontsize=12)
+    plt.ylabel(ytitle, fontproperties=myfont, fontsize=12)
 
     # Save
     plt.savefig(savefile, format="png", bbox_inches="tight", transparent=True, dpi=600)
+    print(savefile + " has been saved...")
 
     # Close
     plt.clf()
