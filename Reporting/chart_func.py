@@ -19,7 +19,7 @@ sns.set_style("white", {"font.sans-serif": ["simhei", "Arial"]})
 
 myfont = fm.FontProperties(fname="C:/Windows/Fonts/msyh.ttc")
 
-color_dict = {
+COLOR_DICT = {
     "拜阿司匹灵": "navy",
     "波立维": "crimson",
     "泰嘉": "teal",
@@ -80,21 +80,35 @@ color_dict = {
     "茶碱,盐酸甲麻黄碱,暴马子浸膏": "saddlebrown",
 }
 
-color_list = [
-    "navy",
-    "crimson",
-    "tomato",
-    "darkorange",
-    "teal",
-    "darkgreen",
-    "olivedrab",
-    "purple",
-    "deepskyblue",
-    "saddlebrown",
-    "grey",
-    "cornflowerblue",
-    "magenta",
-]
+COLOR_LIST = ["#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD", "#8C564B", "#E377C2"]
+
+
+# COLOR_LIST = [
+#     "navy",
+#     "crimson",
+#     "tomato",
+#     "darkorange",
+#     "teal",
+#     "darkgreen",
+#     "olivedrab",
+#     "purple",
+#     "deepskyblue",
+#     "saddlebrown",
+#     "grey",
+#     "cornflowerblue",
+#     "magenta",
+# ]
+
+
+def save_plot(path):
+    # Save the figure
+    plt.savefig(path, format="png", bbox_inches="tight", transparent=True, dpi=600)
+    print(path + " has been saved...")
+
+    # Close
+    plt.clf()
+    plt.cla()
+    plt.close()
 
 
 def get_cmap(n, name="hsv"):
@@ -113,7 +127,7 @@ def plot_grid_barh(df, savefile, formats, fontsize=16, width=15, height=6):
         ax = plt.subplot(gs[i])
         df_bar = df.iloc[:, i]
 
-        ax = df_bar.plot(kind="barh", alpha=0.8, color=color_list[i], edgecolor="black", zorder=3)
+        ax = df_bar.plot(kind="barh", alpha=0.8, color=COLOR_LIST[i], edgecolor="black", zorder=3)
         for j, v in enumerate(df_bar.values):
             ax.text(v / 2, j, formats[i].format(v), ha="center", va="center", color="white", fontsize=fontsize)
             ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
@@ -130,19 +144,14 @@ def plot_grid_barh(df, savefile, formats, fontsize=16, width=15, height=6):
         ax.yaxis.label.set_visible(False)  # 删除y轴标题
 
     # Save the figure
-    plt.savefig(savefile, format="png", bbox_inches="tight", dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    save_plot(savefile)
 
 
 def plot_hist(
-    df, savefile, bins=100, has_kde=False, tiles=10, xlim=None, title=None, xlabel=None, ylabel=None, width=15, height=6
+    df, savefile, bins=100, has_kde=False, tiles=10, xlim=None, title=None, xlabel=None, ylabel=None, width=16, height=5
 ):
     fig, ax = plt.subplots(figsize=(width, height))
-    df.plot(kind="hist", density=True, bins=bins)
+    df.plot(kind="hist", density=True, bins=bins, color="navy")
     if has_kde:
         df.plot(kind="kde")
 
@@ -178,12 +187,7 @@ def plot_hist(
                 ha="center",
             )
     # Save the figure
-    plt.savefig(savefile, format="png", bbox_inches="tight", dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    save_plot(savefile)
 
 
 def plot_line(
@@ -218,13 +222,13 @@ def plot_line(
         plt.plot(
             df.index,
             df[column],
-            color=color_dict[column],
+            color=COLOR_DICT[column],
             linewidth=2,
             label=column,
             marker=markerstyle,
             markersize=5,
             markerfacecolor="white",
-            markeredgecolor=color_dict[column],
+            markeredgecolor=COLOR_DICT[column],
         )
 
         endpoint = -1
@@ -241,7 +245,7 @@ def plot_line(
                     ha="left",
                     va="center",
                     size="small",
-                    color=color_dict[column],
+                    color=COLOR_DICT[column],
                 )
 
         startpoint = 0
@@ -259,7 +263,7 @@ def plot_line(
                     ha="right",
                     va="center",
                     size="small",
-                    color=color_dict[column],
+                    color=COLOR_DICT[column],
                 )
         count += 1
 
@@ -288,12 +292,7 @@ def plot_line(
         ax.set_ylim(ymax=3)
 
     # Save the figure
-    plt.savefig(savefile, format="png", bbox_inches="tight", dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    save_plot(savefile)
 
 
 def plot_line_simple(df, savefile, width=15, height=6, xlabelrotation=0, yfmt="{:.0%}", title="", xtitle="", ytitle=""):
@@ -332,12 +331,7 @@ def plot_line_simple(df, savefile, width=15, height=6, xlabelrotation=0, yfmt="{
     ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), labelspacing=1, prop={"family": "SimHei"})
 
     # Save the figure
-    plt.savefig(savefile, format="png", bbox_inches="tight", dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    save_plot(savefile)
 
 
 def plot_barh(
@@ -358,7 +352,7 @@ def plot_barh(
 ):
     colors = []
     for item in df.columns.tolist():
-        colors.append(color_dict[item])
+        colors.append(COLOR_DICT[item])
     ax = df.plot(kind="barh", stacked=stacked, figsize=(width, height), alpha=0.8, edgecolor="black", color=colors)
     plt.title(title, fontproperties=myfont, fontsize=18)
     plt.xlabel(xtitle, fontproperties=myfont)
@@ -407,12 +401,7 @@ def plot_barh(
             )
 
     # Save the figure
-    plt.savefig(savefile, format="png", bbox_inches="tight", transparent=True, dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    save_plot(savefile)
 
 
 def plot_pie(savefile, sizelist, labellist, focus, title):
@@ -440,7 +429,7 @@ def plot_pie(savefile, sizelist, labellist, focus, title):
     )
 
     for i, pie_wedge in enumerate(wedges):
-        # pie_wedge.set_facecolor(color_dict[pie_wedge.get_label()])
+        # pie_wedge.set_facecolor(COLOR_DICT[pie_wedge.get_label()])
 
         if focus is not None:
             if pie_wedge.get_label() == focus:
@@ -463,17 +452,14 @@ def plot_pie(savefile, sizelist, labellist, focus, title):
     fig.set_size_inches(6, 6)
     fig.gca().add_artist(my_circle)
 
-    # Save
-    plt.savefig(savefile, format="png", transparent=True, bbox_inches="tight", dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    # Save the figure
+    save_plot(savefile)
 
 
 def plot_bubble(
     savefile,
+    width,
+    height,
     x,
     y,
     z,
@@ -497,7 +483,7 @@ def plot_bubble(
 ):
 
     fig, ax = plt.subplots()
-    fig.set_size_inches(14, 7)
+    fig.set_size_inches(width, height)
 
     if ylim is not None:
         ax.set_ylim(ymin=ylim[0], ymax=ylim[1])
@@ -508,7 +494,7 @@ def plot_bubble(
     colors = iter(cmap(np.linspace(0, 1, len(y))))
 
     for i in range(len(x)):
-        ax.scatter(x[i], y[i], z[i]*z_scale, color=next(colors), alpha=0.6, edgecolors="black")
+        ax.scatter(x[i], y[i], z[i] * z_scale, color=next(colors), alpha=0.6, edgecolors="black")
     if yavgline == True:
         ax.axhline(yavg, linestyle="--", linewidth=1, color="r")
     if xavgline == True:
@@ -567,14 +553,8 @@ def plot_bubble(
     plt.xlabel(xtitle, fontproperties=myfont, fontsize=12)
     plt.ylabel(ytitle, fontproperties=myfont, fontsize=12)
 
-    # Save
-    plt.savefig(savefile, format="png", bbox_inches="tight", transparent=True, dpi=600)
-    print(savefile + " has been saved...")
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    # Save the figure
+    save_plot(savefile)
 
 
 def plot_dual_line(
@@ -612,13 +592,13 @@ def plot_dual_line(
         plt.plot(
             df1.index,
             df1[column],
-            color=color_list[i],
+            color=COLOR_LIST[i],
             linewidth=2,
             label=column,
             marker=markerstyle,
             markersize=5,
             markerfacecolor="white",
-            markeredgecolor=color_list[i],
+            markeredgecolor=COLOR_LIST[i],
         )
 
         endpoint = -1
@@ -635,7 +615,7 @@ def plot_dual_line(
                     ha="left",
                     va="center",
                     size="small",
-                    color=color_list[i],
+                    color=COLOR_LIST[i],
                 )
 
         startpoint = 0
@@ -653,7 +633,7 @@ def plot_dual_line(
                     ha="right",
                     va="center",
                     size="small",
-                    color=color_list[i],
+                    color=COLOR_LIST[i],
                 )
         count += 1
 
@@ -681,13 +661,13 @@ def plot_dual_line(
         plt.plot(
             df2.index,
             df2[column],
-            color=color_list[i],
+            color=COLOR_LIST[i],
             linewidth=2,
             label=column,
             marker=markerstyle,
             markersize=5,
             markerfacecolor="white",
-            markeredgecolor=color_list[i],
+            markeredgecolor=COLOR_LIST[i],
         )
 
         endpoint = -1
@@ -704,7 +684,7 @@ def plot_dual_line(
                     ha="left",
                     va="center",
                     size="small",
-                    color=color_list[i],
+                    color=COLOR_LIST[i],
                 )
 
         startpoint = 0
@@ -722,7 +702,7 @@ def plot_dual_line(
                     ha="right",
                     va="center",
                     size="small",
-                    color=color_list[i],
+                    color=COLOR_LIST[i],
                 )
         count += 1
 
@@ -750,12 +730,7 @@ def plot_dual_line(
     #     ax.set_ylim(ymin=-1, ymax=3)
 
     # Save the figure
-    plt.savefig(savefile, transparent=True, format="png", bbox_inches="tight", dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    save_plot(savefile)
 
 
 def plot_bar_line(
@@ -800,7 +775,8 @@ def plot_bar_line(
 
     plt.title(title, fontproperties=myfont, fontsize=20)
 
-    plt.savefig(savefile, transparent=True, format="png", bbox_inches="tight", dpi=600)
+    # Save the figure
+    save_plot(savefile)
 
 
 def plot_barline(
@@ -840,7 +816,6 @@ def plot_barline(
             labels.append(label)
 
     patches = ax.patches
-
     for label, rect in zip(labels, patches):
         height = rect.get_height()
         if height > 0.015:
@@ -895,12 +870,7 @@ def plot_barline(
         ax.get_legend().remove()
 
     # Save the figure
-    plt.savefig(savefile, format="png", bbox_inches="tight", transparent=True, dpi=600)
-
-    # Close
-    plt.clf()
-    plt.cla()
-    plt.close()
+    save_plot(savefile)
 
 
 def refine_outlier(df, column, upper_threshold):

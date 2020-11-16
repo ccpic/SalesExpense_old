@@ -108,6 +108,7 @@ class Clientfile(pd.DataFrame):
             aggfunc = sum
 
         pivoted = pd.pivot_table(self.filtered(filter), values=values, index=index, columns=columns, aggfunc=aggfunc)
+        print(pivoted)
 
         if pivoted.shape[1] == 1 and values == "客户姓名":
             pivoted.columns = ["客户档案"]
@@ -135,7 +136,7 @@ class Clientfile(pd.DataFrame):
         df = pd.concat([client_number, potential], axis=1)
         df.columns = ["客户档案数", "客户平均潜力"]
 
-        df.drop('TBA', inplace=True)
+        df.drop("TBA", inplace=True, errors="ignore")
 
         if sort_values is True:
             df.sort_values(by="客户档案数", axis=0, ascending=False, inplace=True)
@@ -255,8 +256,8 @@ class Clientfile(pd.DataFrame):
             height=height,
         )
 
-    # 绘制份额饼图，如有负值（如负净增长）则绘制对应的条形图
-    def plot_share(self, savefile, index, values=None, filter=None, focus=None, series_limit=10, sort_values=True):
+    # 绘制份额饼图
+    def plot_pie_share(self, savefile, index, values=None, filter=None, focus=None, series_limit=10, sort_values=True):
         df = self.get_dist(index, filter=filter, columns=None, sort_values=sort_values)  # 获取份额数据，只能单列，因此columns=None
 
         # 以下部分处理当系列过多，多于limit参数时的情况，自动将排名靠后的项归总于其他
@@ -286,10 +287,10 @@ class Clientfile(pd.DataFrame):
     def plot_barh_kpi(self, savefile, index, dimension, filter=None, width=15, height=6, **kwargs):
         if dimension == "number":
             df = c.get_kpi_number(index=index, filter=filter)
-            formats = ['{:,.0f}', '{:,.0f}','{:,.0f}','{:,.0f}','{:,.0f}']
+            formats = ["{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}"]
         elif dimension == "potential":
             df = c.get_kpi_potential(index=index, filter=filter)
-            formats = ['{:,.0f}','{:,.0f}', '{:.0%}', '{:.0%}', '{:.0%}']
+            formats = ["{:,.0f}", "{:,.0f}", "{:.0%}", "{:.0%}", "{:.0%}"]
 
         # 项目太多时可选择传参head或tail只出部分output
         if "head" in kwargs and type(kwargs["head"]) is int:
@@ -298,11 +299,50 @@ class Clientfile(pd.DataFrame):
             df = df.tail(kwargs["tail"])
 
         if "fontsize" in kwargs:
-            fontsize = kwargs['fontsize']
+            fontsize = kwargs["fontsize"]
         else:
             fontsize = 16
 
         plot_grid_barh(df=df, savefile=savefile, formats=formats, fontsize=fontsize, width=width, height=height)
+
+    # 绘制覆盖/潜力散点图
+    def plot_bubble_number_potential(
+        self,
+        savefile,
+        index,
+        filter=None,
+        z_scale=1.00,
+        xlim=None,
+        ylim=None,
+        showLabel=True,
+        labelLimit=15,
+        width=15,
+        height=6,
+    ):
+        df = c.get_number_potential(index=index, filter=filter)
+        x = df.loc[:, "客户档案数"]
+        y = df.loc[:, "客户平均潜力"]
+        z = x * y
+        labels = df.index
+        plot_bubble(
+            savefile=savefile,
+            width=width,
+            height=height,
+            x=x,
+            y=y,
+            z=z,
+            z_scale=z_scale,
+            labels=labels,
+            title=None,
+            xtitle="客户档案数",
+            ytitle="客户平均潜力",
+            xfmt="{:,.0f}",
+            yfmt="{:,.0f}",
+            xlim=xlim,
+            ylim=ylim,
+            showLabel=showLabel,
+            labelLimit=labelLimit,
+        )
 
 
 if __name__ == "__main__":
@@ -316,36 +356,13 @@ if __name__ == "__main__":
     df.loc[mask, "科室"] = "社区医院"
     c = Clientfile(df)
     # c.plot_barline_dist(
-    #     index="大区", columns="科室", values=None, savefile="test.png", perc=False, filter={"区域": ["华东区", "华南区"]}
+    #     index="大区", columns="科室", values=None, savefile="test.png", perc=False
     # )
     # c.plot_hist_dist("test.png", tiles=3)
-    # print(c.plot_share("潜力级别"))
-    # c.plot_share(savefile="test.png",index="科室", focus="社区医院")
+    # c.plot_pie_share(savefile="test.png",index="科室", focus="社区医院")
     # c.plot_barline_dist(
     #     index="大区", values="月累计相关病人数", columns="医院层级", savefile="test.png", perc=True
     # )
 
-    # c.plot_barh_kpi(savefile="test.png", index="大区", dimension="potential")
-    df = c.get_number_potential(index="负责代表")
-    x = df.loc[:,'客户档案数']
-    y = df.loc[:,'客户平均潜力']
-    z = x*y
-    labels = df.index
-    plot_bubble(
-        savefile = "test.png",
-        x=x,
-        y=y,
-        z=z,
-        z_scale=0.01,
-        labels=labels,
-        title=None,
-        xtitle=None,
-        ytitle=None,
-        xfmt="{:,.0f}",
-        yfmt="{:,.0f}",
-        labelLimit=200,
-        # xlim=xlim,
-        # ylim=ylim,
-        # showLabel=showLabel,
-        # labelLimit=labelLimit,
-    )
+    c.plot_barh_kpi(savefile="test.png", index="大区", dimension="potential")
+    # c.plot_bubble_number_potential("test.png", "地区经理2", z_scale=0.05, labelLimit=100)
