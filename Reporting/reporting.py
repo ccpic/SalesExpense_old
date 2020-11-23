@@ -43,6 +43,8 @@ from Reporting.chart_func import *
 D_SORTER = {
     "潜力级别": ["H", "M", "L"],
     "科室": ["心内科", "肾内科", "老干科", "神内科", "内分泌科", "其他科室", "社区医院"],
+    "医院层级": ["A", "B", "C", "D", "旗舰社区", "普通社区"],
+    "职称": ["院长/副院长", "主任医师", "副主任医师", "主治医师", "住院医师", "其他"],
 }
 
 D_RENAME = {
@@ -100,7 +102,7 @@ class Clientfile(pd.DataFrame):
 
     # 透视客户分布（对分类指标count/len，对量化指标sum）
     def get_dist(self, index, columns, values=None, filter=None, perc=False, sort_values=True):
-        if values is None:
+        if values is None or values == "客户姓名":
             values = "客户姓名"
             aggfunc = len
         else:
@@ -231,7 +233,7 @@ class Clientfile(pd.DataFrame):
         )
 
     # 量化数据分布和x分位绘图
-    def plot_hist_dist(self, savefile, metric="月累计相关病人数", tiles=10, filter=None, width=15, height=6):
+    def plot_hist_dist(self, metric="月累计相关病人数", tiles=10, filter=None, width=15, height=6):
         if filter is not None:
             df = self.filtered(filter)
         else:
@@ -246,7 +248,7 @@ class Clientfile(pd.DataFrame):
 
         plot_hist(
             df=df,
-            savefile=savefile,
+            savefile="plots/" + title + ".png",
             tiles=tiles,
             xlim=xlim,
             title=title,
@@ -257,7 +259,7 @@ class Clientfile(pd.DataFrame):
         )
 
     # 绘制份额饼图
-    def plot_pie_share(self, savefile, index, values=None, filter=None, focus=None, series_limit=10, sort_values=True):
+    def plot_pie_share(self, index, values=None, filter=None, focus=None, series_limit=10, sort_values=True):
         df = self.get_dist(index, filter=filter, columns=None, sort_values=sort_values)  # 获取份额数据，只能单列，因此columns=None
 
         # 以下部分处理当系列过多，多于limit参数时的情况，自动将排名靠后的项归总于其他
@@ -281,10 +283,16 @@ class Clientfile(pd.DataFrame):
         if values is None:
             values = "档案数"  # 如果透视没设置values，题目为档案数，否则为values
         title = "分%s\n%s份额" % (index, values)
-        plot_pie(savefile=savefile, sizelist=df2, labellist=df2.index, focus=focus, title=title)
+        plot_pie(
+            savefile="plots/" + "分%s%s份额" % (index, values) + ".png",
+            sizelist=df2,
+            labellist=df2.index,
+            focus=focus,
+            title=title,
+        )
 
     # 绘制KPI综合展示图，以多个指标的横条型图同时展示为主
-    def plot_barh_kpi(self, savefile, index, dimension, filter=None, width=15, height=6, **kwargs):
+    def plot_barh_kpi(self, index, dimension, filter=None, width=15, height=6, **kwargs):
         if dimension == "number":
             df = c.get_kpi_number(index=index, filter=filter)
             formats = ["{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}"]
@@ -303,7 +311,10 @@ class Clientfile(pd.DataFrame):
         else:
             fontsize = 16
 
-        plot_grid_barh(df=df, savefile=savefile, formats=formats, fontsize=fontsize, width=width, height=height)
+        title = "分%s档案数量相关综合情况" % index
+        plot_grid_barh(
+            df=df, savefile="plots/" + title + ".png", formats=formats, fontsize=fontsize, width=width, height=height
+        )
 
     # 绘制覆盖/潜力散点图
     def plot_bubble_number_potential(
@@ -346,15 +357,40 @@ class Clientfile(pd.DataFrame):
 
 
 if __name__ == "__main__":
-    df = pd.read_excel("data.xlsx")
+    df = pd.read_excel("20201123122604.xlsx")
     df.rename(columns={"所在科室": "科室", "医院全称": "医院"}, inplace=True)
-    df = df[df["团队"] == "血压团队"]
-    df = df[df["区域"].isin(["华中区"])]
     df["地区经理2"] = df["地区经理"] + "(" + df["大区"] + ")"
-
     mask = df["医院层级"].isin(["旗舰社区", "普通社区"])
     df.loc[mask, "科室"] = "社区医院"
+    mask = df["职称"].isin(["院长", "副院长"])
+    df.loc[mask, "职称"] = "院长/副院长"
+    # 南中国
+    df = df[df["南北中国"] == "南中国"]
+    # df = df[df["区域"].isin(["华中区"])]
     c = Clientfile(df)
+
+    df2 = c.get_dist(index="地区经理2", columns=None)
+    print(df2)
+    # plot_hist(df2, savefile="test.png", bins=50, has_kde=True, has_tiles=False, xlim=[0, 200], width=8, height=6)
+    plot_hist(df2, savefile="test.png", bins=10, has_kde=True, has_tiles=False, width=8, height=6)
+
+    # print(
+    #     "档案数：%s" % df.shape[0],  # 共上传多少档案
+    #     "地区经理数：%s" % len(df["地区经理"].unique()),  # 多少DSM上传
+    #     "代表数数：%s" % len(df["负责代表"].unique()),  # 多少代表上传
+    #     "医院数：%s" % len(df["医院"].unique()),  # 覆盖多少医院
+    # )
+    #
+    # c.plot_pie_share(index="区域")  # 区域份额饼图
+    # c.plot_pie_share(index="医院层级")  # 医院层级份额饼图
+    # c.plot_pie_share(index="科室", focus="社区医院")  # 科室份额饼图
+    # c.plot_pie_share(index="职称")  # 职称份额饼图
+    #
+    # c.plot_barh_kpi(index="大区", dimension="number")
+    #
+    c.plot_hist_dist(tiles=10)  # 档案数量十分位分布
+    # c.plot_hist_dist(tiles=3)  # 档案数量三分位分布
+
     # c.plot_barline_dist(
     #     index="大区", columns="科室", values=None, savefile="test.png", perc=False
     # )
@@ -364,5 +400,5 @@ if __name__ == "__main__":
     #     index="大区", values="月累计相关病人数", columns="医院层级", savefile="test.png", perc=True
     # )
 
-    c.plot_barh_kpi(savefile="test.png", index="大区", dimension="potential")
+    # c.plot_barh_kpi(savefile="test.png", index="大区", dimension="potential")
     # c.plot_bubble_number_potential("test.png", "地区经理2", z_scale=0.05, labelLimit=100)

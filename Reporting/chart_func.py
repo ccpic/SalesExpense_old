@@ -148,12 +148,16 @@ def plot_grid_barh(df, savefile, formats, fontsize=16, width=15, height=6):
 
 
 def plot_hist(
-    df, savefile, bins=100, has_kde=False, tiles=10, xlim=None, title=None, xlabel=None, ylabel=None, width=16, height=5
+    df, savefile, bins=100, has_kde=False, has_tiles=True, tiles=10, xlim=None, title=None, xlabel=None, ylabel=None, width=16, height=5
 ):
     fig, ax = plt.subplots(figsize=(width, height))
-    df.plot(kind="hist", density=True, bins=bins, color="navy")
+    df.plot(kind="hist", density=True, bins=bins, ax=ax)
     if has_kde:
-        df.plot(kind="kde")
+        ax_new = ax.twinx()
+        df.plot(kind="kde", ax=ax_new, color='darkorange')
+        ax_new.get_legend().remove()
+        ax_new.set_yticks([])  # 删除y轴刻度
+        ax_new.set_ylabel(None)
 
     if xlim is not None:
         ax.set_xlim(xlim[0], xlim[1])  # 设置x轴显示limit
@@ -163,29 +167,55 @@ def plot_hist(
     ax.set_yticks([])  # 删除y轴刻度
     ax.set_ylabel(ylabel)
 
-    # 计算百分位数据
-    percentiles = []
-    for i in range(tiles):
-        percentiles.append([df.quantile((i) / tiles), "D" + str(i + 1)])  # 十分位Decile
+    # 添加百分位信息
+    if has_tiles is True:
 
-    # 在hist图基础上绘制百分位
-    for i, percentile in enumerate(percentiles):
-        ax.axvline(percentile[0], color="crimson", linestyle=":")  # 竖分隔线
-        ax.text(percentile[0], ax.get_ylim()[1] * 0.95, int(percentile[0]), ha="center")
-        if i < tiles - 1:
-            ax.text(
-                percentiles[i][0] + (percentiles[i + 1][0] - percentiles[i][0]) / 2,
-                ax.get_ylim()[1],
-                percentile[1],
-                ha="center",
-            )
-        else:
-            ax.text(
-                percentiles[tiles - 1][0] + (ax.get_xlim()[1] - percentiles[tiles - 1][0]) / 2,
-                ax.get_ylim()[1],
-                percentile[1],
-                ha="center",
-            )
+        # 计算百分位数据
+        percentiles = []
+        for i in range(tiles):
+            percentiles.append([df.quantile((i) / tiles), "D" + str(i + 1)])  # 十分位Decile
+
+        # 在hist图基础上绘制百分位
+        for i, percentile in enumerate(percentiles):
+            ax.axvline(percentile[0], color="crimson", linestyle=":")  # 竖分隔线
+            ax.text(percentile[0], ax.get_ylim()[1] * 0.97, int(percentile[0]), ha="center", color="crimson", fontsize=10)
+            if i < tiles - 1:
+                ax.text(
+                    percentiles[i][0] + (percentiles[i + 1][0] - percentiles[i][0]) / 2,
+                    ax.get_ylim()[1],
+                    percentile[1],
+                    ha="center",
+                )
+            else:
+                ax.text(
+                    percentiles[tiles - 1][0] + (ax.get_xlim()[1] - percentiles[tiles - 1][0]) / 2,
+                    ax.get_ylim()[1],
+                    percentile[1],
+                    ha="center",
+                )
+
+    # 添加均值、中位数等信息
+    median = np.median(df.values) # 计算中位数
+    mean = np.mean(df.values) # 计算平均数
+
+    if median > mean:
+        yindex_median = 0.95
+        yindex_mean = 0.9
+        pos_median = "left"
+        pos_mean = "right"
+    else:
+        yindex_mean = 0.95
+        yindex_median = 0.9
+        pos_median = "right"
+        pos_mean = "left"
+
+    ax.axvline(median, color="crimson", linestyle=":")
+    ax.text(median, ax.get_ylim()[1] * yindex_median, "中位数："+ str(int(median)), ha=pos_median, color="crimson")
+
+
+    ax.axvline(mean, color="purple", linestyle=":")
+    ax.text(mean, ax.get_ylim()[1] * yindex_mean, "平均数："+ str(int(mean)), ha=pos_mean, color="purple")
+
     # Save the figure
     save_plot(savefile)
 
