@@ -128,8 +128,19 @@ def plot_grid_barh(df, savefile, formats, fontsize=16, width=15, height=6):
         df_bar = df.iloc[:, i]
 
         ax = df_bar.plot(kind="barh", alpha=0.8, color=COLOR_LIST[i], edgecolor="black", zorder=3)
+
+        max_v = df_bar.values.max()
         for j, v in enumerate(df_bar.values):
-            ax.text(v / 2, j, formats[i].format(v), ha="center", va="center", color="white", fontsize=fontsize)
+            if v < max_v * 0.2:
+                pos_x = v * 1.1
+                ha = "left"
+                fontcolor = COLOR_LIST[i]
+            else:
+                pos_x = v / 2
+                ha = "center"
+                fontcolor = "white"
+
+            ax.text(pos_x, j, formats[i].format(v), ha=ha, va="center", color=fontcolor, fontsize=fontsize)
             ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
 
         ax.invert_yaxis()  # 翻转y轴，最上方显示排名靠前的序列
@@ -148,14 +159,26 @@ def plot_grid_barh(df, savefile, formats, fontsize=16, width=15, height=6):
 
 
 def plot_hist(
-    df, savefile, bins=100, has_kde=False, has_tiles=True, tiles=10, xlim=None, title=None, xlabel=None, ylabel=None, width=16, height=5
+    df,
+    savefile,
+    bins=100,
+    show_kde=False,
+    show_tiles=False,
+    show_metrics=False,
+    tiles=10,
+    xlim=None,
+    title=None,
+    xlabel=None,
+    ylabel=None,
+    width=16,
+    height=5,
 ):
     fig, ax = plt.subplots(figsize=(width, height))
-    df.plot(kind="hist", density=True, bins=bins, ax=ax)
-    if has_kde:
+    df.plot(kind="hist", density=True, bins=bins, ax=ax, color="grey", legend=None, alpha=0.5)
+    if show_kde:
         ax_new = ax.twinx()
-        df.plot(kind="kde", ax=ax_new, color='darkorange')
-        ax_new.get_legend().remove()
+        df.plot(kind="kde", ax=ax_new, color="darkorange", legend=None)
+        # ax_new.get_legend().remove()
         ax_new.set_yticks([])  # 删除y轴刻度
         ax_new.set_ylabel(None)
 
@@ -168,7 +191,7 @@ def plot_hist(
     ax.set_ylabel(ylabel)
 
     # 添加百分位信息
-    if has_tiles is True:
+    if show_tiles:
 
         # 计算百分位数据
         percentiles = []
@@ -178,7 +201,9 @@ def plot_hist(
         # 在hist图基础上绘制百分位
         for i, percentile in enumerate(percentiles):
             ax.axvline(percentile[0], color="crimson", linestyle=":")  # 竖分隔线
-            ax.text(percentile[0], ax.get_ylim()[1] * 0.97, int(percentile[0]), ha="center", color="crimson", fontsize=10)
+            ax.text(
+                percentile[0], ax.get_ylim()[1] * 0.97, int(percentile[0]), ha="center", color="crimson", fontsize=10
+            )
             if i < tiles - 1:
                 ax.text(
                     percentiles[i][0] + (percentiles[i + 1][0] - percentiles[i][0]) / 2,
@@ -195,26 +220,26 @@ def plot_hist(
                 )
 
     # 添加均值、中位数等信息
-    median = np.median(df.values) # 计算中位数
-    mean = np.mean(df.values) # 计算平均数
+    if show_metrics:
+        median = np.median(df.values)  # 计算中位数
+        mean = np.mean(df.values)  # 计算平均数
 
-    if median > mean:
-        yindex_median = 0.95
-        yindex_mean = 0.9
-        pos_median = "left"
-        pos_mean = "right"
-    else:
-        yindex_mean = 0.95
-        yindex_median = 0.9
-        pos_median = "right"
-        pos_mean = "left"
+        if median > mean:
+            yindex_median = 0.95
+            yindex_mean = 0.9
+            pos_median = "left"
+            pos_mean = "right"
+        else:
+            yindex_mean = 0.95
+            yindex_median = 0.9
+            pos_median = "right"
+            pos_mean = "left"
 
-    ax.axvline(median, color="crimson", linestyle=":")
-    ax.text(median, ax.get_ylim()[1] * yindex_median, "中位数："+ str(int(median)), ha=pos_median, color="crimson")
+        ax.axvline(median, color="crimson", linestyle=":")
+        ax.text(median, ax.get_ylim()[1] * yindex_median, "中位数：" + str(int(median)), ha=pos_median, color="crimson")
 
-
-    ax.axvline(mean, color="purple", linestyle=":")
-    ax.text(mean, ax.get_ylim()[1] * yindex_mean, "平均数："+ str(int(mean)), ha=pos_mean, color="purple")
+        ax.axvline(mean, color="purple", linestyle=":")
+        ax.text(mean, ax.get_ylim()[1] * yindex_mean, "平均数：" + str(int(mean)), ha=pos_mean, color="purple")
 
     # Save the figure
     save_plot(savefile)
@@ -898,6 +923,63 @@ def plot_barline(
         lines, labels2 = ax2.get_legend_handles_labels()
         plt.legend(bars + lines, labels + labels2, loc="center left", bbox_to_anchor=(1.0, 0.5))
         ax.get_legend().remove()
+
+    # Save the figure
+    save_plot(savefile)
+
+
+def plot_twinbar(
+    df1,
+    df2,
+    savefile,
+    df1_stacked=True,
+    df2_stacked=True,
+    fmt1="{:.0%}",
+    labelfmt1="{:.0%}",
+    fmt2="{:.0%}",
+    labelfmt2="{:.0%}",
+    width=15,
+    height=6,
+):
+    fig = plt.figure(figsize=(width, height), facecolor="white")
+
+    gs = gridspec.GridSpec(1, 2)  # 布局为1行2列
+    # gs.update(wspace=0, hspace=0)  # grid各部分之间紧挨，space设为0.
+
+    ax1 = plt.subplot(gs[0])
+    df1.plot(kind="bar", ax=ax1, stacked=df1_stacked, figsize=(width, height), alpha=0.8, edgecolor="black")
+
+    # # Add value label
+    # labels = []
+    # for j in df1.columns:
+    #     for i in df1.index:
+    #         label = str(df1.loc[i][j])
+    #         labels.append(label)
+    #
+    # patches = ax1.patches
+    # for label, rect in zip(labels, patches):
+    #     height = rect.get_height()
+    #     if height > 0.015:
+    #         x = rect.get_x()
+    #         y = rect.get_y()
+    #         width = rect.get_width()
+    #         ax1.text(
+    #             x + width / 2.0,
+    #             y + height / 2.0,
+    #             labelfmt1.format(float(label)),
+    #             ha="center",
+    #             va="center",
+    #             color="white",
+    #             fontproperties=myfont,
+    #             fontsize=10,
+    #         )
+
+    ax2 = plt.subplot(gs[1])
+    df2.plot(kind="bar", ax=ax2, stacked=df2_stacked, figsize=(width, height), alpha=0.8, edgecolor="black")
+
+    bars, labels = ax1.get_legend_handles_labels()
+    plt.legend(bars, labels, loc="center left", bbox_to_anchor=(1.0, 0.5))
+    ax1.get_legend().remove()
 
     # Save the figure
     save_plot(savefile)
