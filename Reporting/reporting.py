@@ -45,6 +45,7 @@ D_SORTER = {
     "科室": ["心内科", "肾内科", "老干科", "神内科", "内分泌科", "其他科室", "社区医院"],
     "医院层级": ["A", "B", "C", "D", "旗舰社区", "普通社区"],
     "职称": ["院长/副院长", "主任医师", "副主任医师", "主治医师", "住院医师", "其他"],
+    "IQVIA医院潜力分位": ["D" + str(i + 1) for i in range(9, 0, -1)],
 }
 
 D_RENAME = {
@@ -110,7 +111,6 @@ class Clientfile(pd.DataFrame):
             aggfunc = sum
 
         pivoted = pd.pivot_table(self.filtered(filter), values=values, index=index, columns=columns, aggfunc=aggfunc)
-        print(pivoted)
 
         if pivoted.shape[1] == 1 and values == "客户姓名":
             pivoted.columns = ["客户档案"]
@@ -128,7 +128,6 @@ class Clientfile(pd.DataFrame):
         if perc is True:
             pivoted = pivoted.div(pivoted.sum(axis=1), axis=0)  # 计算行汇总的百分比
 
-        print(pivoted)
         return pivoted
 
     # 取得一对数据客户数和人均潜力
@@ -144,6 +143,18 @@ class Clientfile(pd.DataFrame):
             df.sort_values(by="客户档案数", axis=0, ascending=False, inplace=True)
 
         return df
+
+    # 取得一对数据医院IQVIA潜力和医院档案潜力
+    def get_potential_pair(self, filter=None, sort_values=True):
+        df_clientfile = self.get_dist(index="医院", columns=None, values="月累计相关病人数", filter=filter)
+        df_iqvia = self.get_dist(index="医院", columns=None, values="IQVIA医院潜力", filter=filter)
+        df_combined = pd.concat([df_clientfile, df_iqvia], axis=1)
+        df_combined = df_combined[(df_combined.T != 0).any()]
+
+        if sort_values is True:
+            df.sort_values(by="月累计相关病人数", axis=0, ascending=False, inplace=True)
+
+        return df_combined
 
     # 高中潜客户数占比
     def get_hm_ratio(self, index, filter=None, sort_values=True):
@@ -332,11 +343,11 @@ class Clientfile(pd.DataFrame):
     # 绘制KPI综合展示图，以多个指标的横条型图同时展示为主
     def plot_barh_kpi(self, index, dimension, filter=None, width=15, height=6, **kwargs):
         if dimension == "number":
-            df = c.get_kpi_number(index=index, filter=filter)
+            df = self.get_kpi_number(index=index, filter=filter)
             formats = ["{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}"]
             title = "分%s档案数量相关综合情况" % index
         elif dimension == "potential":
-            df = c.get_kpi_potential(index=index, filter=filter)
+            df = self.get_kpi_potential(index=index, filter=filter)
             formats = ["{:,.0f}", "{:,.0f}", "{:.0%}", "{:.0%}", "{:.0%}"]
             title = "分%s档案潜力相关综合情况" % index
 
@@ -361,7 +372,7 @@ class Clientfile(pd.DataFrame):
     def plot_bubble_number_potential(
         self, index, filter=None, z_scale=1.00, xlim=None, ylim=None, showLabel=True, labelLimit=15, width=15, height=6,
     ):
-        df = c.get_number_potential(index=index, filter=filter)
+        df = self.get_number_potential(index=index, filter=filter)
         x = df.loc[:, "客户档案数"]
         y = df.loc[:, "客户平均潜力"]
         z = x * y
@@ -369,7 +380,41 @@ class Clientfile(pd.DataFrame):
 
         title = "%s客户档案数 versus 平均潜力" % index
         xtitle = "客户档案数"
-        ytitle = "客户平均潜力"
+        ytitle = "客户平均潜力（月累计相关病人数）"
+
+        plot_bubble(
+            savefile="plots/" + title + ".png",
+            width=width,
+            height=height,
+            x=x,
+            y=y,
+            z=z,
+            z_scale=z_scale,
+            labels=labels,
+            title=title,
+            xtitle=xtitle,
+            ytitle=ytitle,
+            xfmt="{:,.0f}",
+            yfmt="{:,.0f}",
+            xlim=xlim,
+            ylim=ylim,
+            showLabel=showLabel,
+            labelLimit=labelLimit,
+        )
+
+    # 绘制医院潜力和客户档案潜力散点图
+    def plot_bubble_potential_pair(
+        self, filter=None, z_scale=1.00, xlim=None, ylim=None, showLabel=False, labelLimit=30, width=15, height=6,
+    ):
+        df = self.get_potential_pair(filter=filter)
+        x = np.log(df.loc[:, "IQVIA医院潜力"])
+        y = np.log(df.loc[:, "月累计相关病人数"])
+        z = [50] * len(x)
+        labels = df.index
+
+        title = "IQVIA医院潜力 versus 客户档案医院潜力"
+        xtitle = "IQVIA医院潜力（取对数）"
+        ytitle = "客户档案医院潜力（取对数）"
 
         plot_bubble(
             savefile="plots/" + title + ".png",
@@ -392,16 +437,26 @@ class Clientfile(pd.DataFrame):
         )
 
 
-if __name__ == "__main__":
-    df = pd.read_excel("20201123122604.xlsx")
+def cleandata(df):
     df.rename(columns={"所在科室": "科室", "医院全称": "医院", "省/自治区/直辖市": "省份"}, inplace=True)
     df["地区经理"] = df["地区经理"] + "(" + df["大区"] + ")"
     mask = df["医院层级"].isin(["旗舰社区", "普通社区"])
     df.loc[mask, "科室"] = "社区医院"
     mask = df["职称"].isin(["院长", "副院长"])
     df.loc[mask, "职称"] = "院长/副院长"
+
+    return df
+
+
+if __name__ == "__main__":
+    df = pd.read_excel("20201123122604.xlsx")
+    df_decile = pd.read_excel("decile.xlsx")
+    df = pd.merge(df, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
+    df = cleandata(df)
+
     # 南中国
     df = df[df["南北中国"] == "南中国"]
+
     # df = df[df["区域"].isin(["华中区"])]
     c = Clientfile(df)
 
@@ -456,14 +511,18 @@ if __name__ == "__main__":
     # c.plot_pie_share(index="职称")  # 职称份额饼图
     #
     # c.plot_barh_kpi(index="医院层级", dimension="number")
+    # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="number")
     # c.plot_barh_kpi(index="科室", dimension="number")
     # c.plot_barh_kpi(index="职称", dimension="number")
+
     #
     # c.plot_barh_kpi(index="区域", dimension="number")
     # c.plot_barh_kpi(index="大区", dimension="number")
     #
     # c.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=True)
+    # c.plot_barline_dist(index="大区", columns="医院潜力分位", values=None, perc=False)
+    # c.plot_barline_dist(index="大区", columns="医院潜力分位", values=None, perc=True)
     # c.plot_barline_dist(index="大区", columns="科室", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="科室", values=None, perc=True)
     # c.plot_barline_dist(index="大区", columns="职称", values=None, perc=False)
@@ -480,11 +539,14 @@ if __name__ == "__main__":
     # c.plot_pie_share(index="潜力级别", values="月累计相关病人数")  # 潜力饼图
     #
     # c.plot_barh_kpi(index="医院层级", dimension="potential")
+    # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="potential")
     # c.plot_barh_kpi(index="科室", dimension="potential")
     # c.plot_barh_kpi(index="职称", dimension="potential")
     #
     # c.plot_barh_kpi(index="区域", dimension="potential")
     # c.plot_barh_kpi(index="大区", dimension="potential")
+    # c.plot_barh_kpi(index="医院", dimension="potential", filter={"IQVIA医院潜力分位": ["D10"]}, width=15, heigh=15)
+    # c.plot_barh_kpi(index="医院", dimension="potential", filter={"IQVIA医院潜力分位": ["D9"]}, width=15, heigh=8)
 
     # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[0, 16], fontsize=12)
     # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[18, 34], fontsize=12)
