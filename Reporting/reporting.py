@@ -45,7 +45,7 @@ D_SORTER = {
     "科室": ["心内科", "肾内科", "老干科", "神内科", "内分泌科", "其他科室", "社区医院"],
     "医院层级": ["A", "B", "C", "D", "旗舰社区", "普通社区"],
     "职称": ["院长/副院长", "主任医师", "副主任医师", "主治医师", "住院医师", "其他"],
-    "IQVIA医院潜力分位": ["D" + str(i + 1) for i in range(9, 0, -1)],
+    "IQVIA医院潜力分位": ["D" + str(i + 1) for i in range(9, -1, -1)],
 }
 
 D_RENAME = {
@@ -341,7 +341,7 @@ class Clientfile(pd.DataFrame):
         )
 
     # 绘制KPI综合展示图，以多个指标的横条型图同时展示为主
-    def plot_barh_kpi(self, index, dimension, filter=None, width=15, height=6, **kwargs):
+    def plot_barh_kpi(self, index, dimension, mean_vline=False, filter=None, width=15, height=6, **kwargs):
         if dimension == "number":
             df = self.get_kpi_number(index=index, filter=filter)
             formats = ["{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}"]
@@ -350,6 +350,12 @@ class Clientfile(pd.DataFrame):
             df = self.get_kpi_potential(index=index, filter=filter)
             formats = ["{:,.0f}", "{:,.0f}", "{:.0%}", "{:.0%}", "{:.0%}"]
             title = "分%s档案潜力相关综合情况" % index
+
+        # 各指标平均值
+        if mean_vline:
+            mean_value = df.mean()
+        else:
+            mean_value = None
 
         # 项目太多时可选择传参head或tail只出部分output
         if "head" in kwargs and type(kwargs["head"]) is int:
@@ -365,7 +371,13 @@ class Clientfile(pd.DataFrame):
             fontsize = 16
 
         plot_grid_barh(
-            df=df, savefile="plots/" + title + ".png", formats=formats, fontsize=fontsize, width=width, height=height
+            df=df,
+            savefile="plots/" + title + ".png",
+            formats=formats,
+            vline_value=mean_value,
+            fontsize=fontsize,
+            width=width,
+            height=height,
         )
 
     # 绘制覆盖/潜力散点图
@@ -377,6 +389,12 @@ class Clientfile(pd.DataFrame):
         y = df.loc[:, "客户平均潜力"]
         z = x * y
         labels = df.index
+
+        # 平均数分隔线
+        xavg = x.mean()
+        yavg = y.mean()
+        xlabel = "平均档案数:" + "{:,.0f}".format(xavg)
+        ylabel = "平均潜力:" + "{:,.0f}".format(yavg)
 
         title = "%s客户档案数 versus 平均潜力" % index
         xtitle = "客户档案数"
@@ -400,6 +418,12 @@ class Clientfile(pd.DataFrame):
             ylim=ylim,
             showLabel=showLabel,
             labelLimit=labelLimit,
+            xavgline=True,
+            xavg=xavg,
+            xlabel=xlabel,
+            yavgline=True,
+            yavg=yavg,
+            ylabel=ylabel,
         )
 
     # 绘制医院潜力和客户档案潜力散点图
@@ -449,24 +473,26 @@ def cleandata(df):
 
 
 if __name__ == "__main__":
-    df = pd.read_excel("20201123122604.xlsx")
+    df = pd.read_excel("20201130095848.xlsx")
     df_decile = pd.read_excel("decile.xlsx")
+    print(df, df_decile)
     df = pd.merge(df, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
     df = cleandata(df)
 
     # 南中国
-    df = df[df["南北中国"] == "南中国"]
+    df = df[df["南北中国"] == "北中国"]
 
     # df = df[df["区域"].isin(["华中区"])]
     c = Clientfile(df)
 
+    # P4
     # print(
     #     "档案数：%s" % df.shape[0],  # 共上传多少档案
     #     "地区经理数：%s" % len(df["地区经理"].unique()),  # 多少DSM上传
     #     "代表数数：%s" % len(df["负责代表"].unique()),  # 多少代表上传
     #     "医院数：%s" % len(df["医院"].unique()),  # 覆盖多少医院
     # )
-    #
+    # P5
     # # 各医院客户档案覆盖数量分布
     # c.plot_hist_dist(
     #     pivoted=True,
@@ -505,52 +531,56 @@ if __name__ == "__main__":
     #     width=6,
     #     height=8,
     # )
-    #
+    # P6
+    # # 客户档案基本分布情况
     # c.plot_pie_share(index="医院层级")  # 医院层级份额饼图
     # c.plot_pie_share(index="科室", focus="社区医院")  # 科室份额饼图
     # c.plot_pie_share(index="职称")  # 职称份额饼图
     #
-    # c.plot_barh_kpi(index="医院层级", dimension="number")
-    # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="number")
-    # c.plot_barh_kpi(index="科室", dimension="number")
-    # c.plot_barh_kpi(index="职称", dimension="number")
-
+    # c.plot_barh_kpi(index="医院层级", dimension="number") # P7分医院层级档案数量相关指标汇总
+    # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="number") # P8分IQVIA医院潜力分位档案数量相关指标汇总
+    # c.plot_barh_kpi(index="科室", dimension="number") # P9分科室档案数量相关指标汇总
+    # c.plot_barh_kpi(index="职称", dimension="number") # P10分职称档案数量相关指标汇总
     #
-    # c.plot_barh_kpi(index="区域", dimension="number")
-    # c.plot_barh_kpi(index="大区", dimension="number")
-    #
+    # c.plot_barh_kpi(index="区域", dimension="number", mean_vline=True) # P11分区域档案数量相关指标汇总
+    # c.plot_barh_kpi(index="大区", dimension="number", mean_vline=True) # P12分大区档案数量相关指标汇总
+    # # P13-20
     # c.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=True)
-    # c.plot_barline_dist(index="大区", columns="医院潜力分位", values=None, perc=False)
-    # c.plot_barline_dist(index="大区", columns="医院潜力分位", values=None, perc=True)
+    # c.plot_barline_dist(index="大区", columns="IQVIA医院潜力分位", values=None, perc=False)
+    # c.plot_barline_dist(index="大区", columns="IQVIA医院潜力分位", values=None, perc=True)
     # c.plot_barline_dist(index="大区", columns="科室", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="科室", values=None, perc=True)
     # c.plot_barline_dist(index="大区", columns="职称", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="职称", values=None, perc=True)
+    # P21-23 各地区经理档案数量相关指标汇总
+    # c.plot_barh_kpi(index="地区经理", dimension="number", range=[0, 19], fontsize=12, mean_vline=True)
+    # c.plot_barh_kpi(index="地区经理", dimension="number", range=[19, 38], fontsize=12, mean_vline=True)
+    # c.plot_barh_kpi(index="地区经理", dimension="number", range=[38, 57], fontsize=12, mean_vline=True)
     #
-    # c.plot_barh_kpi(index="地区经理", dimension="number", range=[0, 16], fontsize=12)
-    # c.plot_barh_kpi(index="地区经理", dimension="number", range=[18, 34], fontsize=12)
-    # c.plot_barh_kpi(index="地区经理", dimension="number", range=[35, 49], fontsize=12)
-    #
-    # c.plot_hist_dist(pivoted=False, show_kde=True, show_tiles=True, bins=100, tiles=10)  # 档案数量十分位分布
-    # c.plot_hist_dist(pivoted=False, show_kde=True, show_tiles=True, bins=100, tiles=3)  # 档案数量三分位分布
-    #
+    # c.plot_hist_dist(pivoted=False, show_kde=True, show_tiles=True, bins=100, tiles=10)  # P25 档案数量十分位分布
+    # c.plot_hist_dist(pivoted=False, show_kde=True, show_tiles=True, bins=100, tiles=3)  # P26 档案数量三分位分布
+    # # P2
     # c.plot_pie_share(index="潜力级别")  # 潜力饼图
     # c.plot_pie_share(index="潜力级别", values="月累计相关病人数")  # 潜力饼图
     #
-    # c.plot_barh_kpi(index="医院层级", dimension="potential")
-    # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="potential")
-    # c.plot_barh_kpi(index="科室", dimension="potential")
-    # c.plot_barh_kpi(index="职称", dimension="potential")
+    # c.plot_barh_kpi(index="医院层级", dimension="potential")  # P28 分医院层级档案潜力相关指标汇总
+    # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="potential") # P29 分IQVIA医院潜力分位档案潜力相关指标汇总
+    # c.plot_barh_kpi(index="科室", dimension="potential") # P30 分科室档案潜力相关指标汇总
+    # c.plot_barh_kpi(index="职称", dimension="potential") # P31 分职称层级档案潜力相关指标汇总
     #
-    # c.plot_barh_kpi(index="区域", dimension="potential")
-    # c.plot_barh_kpi(index="大区", dimension="potential")
+    # c.plot_barh_kpi(index="区域", dimension="potential", mean_vline=True) # P32 分区域层级档案潜力相关指标汇总
+    # c.plot_barh_kpi(index="大区", dimension="potential", mean_vline=True) # P33 分大区层级档案潜力相关指标汇总
+
     # c.plot_barh_kpi(index="医院", dimension="potential", filter={"IQVIA医院潜力分位": ["D10"]}, width=15, heigh=15)
     # c.plot_barh_kpi(index="医院", dimension="potential", filter={"IQVIA医院潜力分位": ["D9"]}, width=15, heigh=8)
 
-    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[0, 16], fontsize=12)
-    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[18, 34], fontsize=12)
-    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[35, 49], fontsize=12)
+    # P34-36 分地区经理层级档案潜力相关指标汇总
+    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[0, 19], fontsize=12, mean_vline=True)
+    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[19, 38], fontsize=12, mean_vline=True)
+    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[38, 57], fontsize=12, mean_vline=True)
 
+    # P38-39 数量 versus 潜力 交叉分析
     # c.plot_bubble_number_potential("大区", z_scale=0.02, labelLimit=100)
     # c.plot_bubble_number_potential("地区经理", z_scale=0.01, labelLimit=100)
+    # c.plot_bubble_number_potential("IQVIA医院潜力分位", z_scale=0.02, labelLimit=100)

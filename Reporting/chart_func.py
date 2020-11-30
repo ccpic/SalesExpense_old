@@ -118,7 +118,7 @@ def get_cmap(n, name="hsv"):
     return plt.cm.get_cmap(name, n)
 
 
-def plot_grid_barh(df, savefile, formats, fontsize=16, width=15, height=6):
+def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=15, height=6):
     fig = plt.figure(figsize=(width, height), facecolor="white")
 
     gs = gridspec.GridSpec(1, df.shape[1])  # 布局为1行多列
@@ -143,6 +143,18 @@ def plot_grid_barh(df, savefile, formats, fontsize=16, width=15, height=6):
 
             ax.text(pos_x, j, formats[i].format(v), ha=ha, va="center", color=fontcolor, fontsize=fontsize)
             ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
+
+        # 添加平均值竖线
+        if vline_value is not None:
+            ax.axvline(vline_value[i], color=COLOR_LIST[i], linestyle="--", linewidth=1, zorder=1)
+            ax.text(
+                vline_value[i],
+                ax.get_ylim()[1] + 0.1,
+                "平均:" + formats[i].format(vline_value[i]),
+                va="top",
+                color=COLOR_LIST[i],
+                fontsize=fontsize,
+            )
 
         ax.invert_yaxis()  # 翻转y轴，最上方显示排名靠前的序列
 
@@ -550,11 +562,11 @@ def plot_bubble(
     colors = iter(cmap(np.linspace(0, 1, len(y))))
 
     for i in range(len(x)):
-        ax.scatter(x[i], y[i], z[i] * z_scale, color=next(colors), alpha=0.6, edgecolors="black")
+        ax.scatter(x[i], y[i], z[i] * z_scale, color=next(colors), alpha=0.6, edgecolors="black", zorder=5)
     if yavgline == True:
-        ax.axhline(yavg, linestyle="--", linewidth=1, color="r")
+        ax.axhline(yavg, linestyle="--", linewidth=0.5, color="grey", zorder=1)
     if xavgline == True:
-        ax.axvline(xavg, linestyle="--", linewidth=1, color="r")
+        ax.axvline(xavg, linestyle="--", linewidth=0.5, color="grey", zorder=1)
     # ax.scatter(x, y, s=z, c=color, alpha=0.6, edgecolors="grey")
     # ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
 
@@ -575,6 +587,7 @@ def plot_bubble(
                 multialignment="center",
                 fontproperties=myfont,
                 fontsize=10,
+                zorder=10,
             )
             for i in range(len(labels[:labelLimit]))
         ]
@@ -587,7 +600,7 @@ def plot_bubble(
             ylabel,
             ha="left",
             va="center",
-            color="r",
+            color="grey",
             multialignment="center",
             fontproperties=myfont,
             fontsize=10,
@@ -599,7 +612,7 @@ def plot_bubble(
             xlabel,
             ha="left",
             va="top",
-            color="r",
+            color="grey",
             multialignment="center",
             fontproperties=myfont,
             fontsize=10,
