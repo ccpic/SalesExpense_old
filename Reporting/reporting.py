@@ -46,6 +46,7 @@ D_SORTER = {
     "医院层级": ["A", "B", "C", "D", "旗舰社区", "普通社区"],
     "职称": ["院长/副院长", "主任医师", "副主任医师", "主治医师", "住院医师", "其他"],
     "IQVIA医院潜力分位": ["D" + str(i + 1) for i in range(9, -1, -1)],
+    "月份": [202011, 202012],
 }
 
 D_RENAME = {
@@ -64,19 +65,16 @@ class Clientfile(pd.DataFrame):
             self.cls = cls
 
         def __call__(self, *args, **kwargs):
-            kwargs['name'] = None
+            kwargs["name"] = None
             return self.cls(*args, **kwargs)
 
         def _from_axes(self, *args, **kwargs):
             return self.cls._from_axes(*args, **kwargs)
 
-    def __init__(self, data, name, index=None, columns=None, dtype=None, copy=True):
-        super(Clientfile, self).__init__(data=data,
-                                      index=index,
-                                      columns=columns,
-                                      dtype=dtype,
-                                      copy=copy)
+    def __init__(self, data, name, savepath="plots/", index=None, columns=None, dtype=None, copy=True):
+        super(Clientfile, self).__init__(data=data, index=index, columns=columns, dtype=dtype, copy=copy)
         self.name = name
+        self.savepath = savepath
 
     # 根据列名和列值做数据筛选
     def filtered(self, filter=None):
@@ -209,8 +207,28 @@ class Clientfile(pd.DataFrame):
         return df
 
     # 分类指标分布情况绘图
-    def plot_barline_dist(self, index, columns, values=None, perc=False, filter=None, width=15, height=6, **kwargs):
+    def plot_barline_dist(
+        self,
+        index,
+        columns,
+        values=None,
+        perc=False,
+        filter=None,
+        width=15,
+        height=6,
+        format_perc="{:.0%}",
+        format_abs="{:.0f}",
+        pre=None,
+        **kwargs
+    ):
         df_bar = self.get_dist(index=index, columns=columns, values=values, perc=perc, filter=filter)
+        text_diff = ""
+        if pre is not None:
+            idx = df_bar.index
+            df_pre = pre.get_dist(index=index, columns=columns, values=values, perc=perc, filter=filter)
+            df_bar = df_bar - df_pre
+            df_bar = df_bar.reindex(idx)
+            text_diff = "环比变化"
 
         # 如果关注的是潜力分级，则加上高中潜潜力占比的折线图
         if columns == "潜力分级":
@@ -238,18 +256,18 @@ class Clientfile(pd.DataFrame):
         if columns is None:
             columns = ""
         if perc is True:
-            y1fmt = "{:.0%}"
-            y1labelfmt = "{:.0%}"
-            title = "各%s分%s%s贡献份额" % (index, columns, values)
+            y1fmt = format_perc
+            y1labelfmt = format_perc
+            title = "%s各%s分%s%s贡献份额%s" % (self.name, index, columns, values, text_diff)
         else:
-            y1fmt = "{:.0f}"
-            y1labelfmt = "{:.0f}"
-            title = "各%s分%s%s" % (index, columns, values)
+            y1fmt = format_abs
+            y1labelfmt = format_abs
+            title = "%s各%s分%s%s%s" % (self.name, index, columns, values, text_diff)
 
         plot_barline(
             df_bar=df_bar,
             df_line=df_line,
-            savefile="plots/" + title + ".png",
+            savefile=self.savepath + title + ".png",
             title=title,
             y1fmt=y1fmt,
             y1labelfmt=y1labelfmt,
@@ -289,13 +307,13 @@ class Clientfile(pd.DataFrame):
             df = df[metric]
             xlim = [0, 800]
             if show_tiles:
-                title = "客户档案潜力%s分位分布" % tiles
+                title = "%s客户档案潜力%s分位分布" % (self.name, tiles)
             else:
-                title = "客户档案潜力分布"
+                title = "%s客户档案潜力分布" % self.name
             xlabel = "潜力值（月累计相关病人数）"
         elif pivoted is True:
             df = self.get_dist(index=index, columns=None)
-            title = "各%s客户档案上传数量分布" % index
+            title = "%s各%s客户档案上传数量分布" % (self.name, index)
             xlabel = "客户档案数量"
         ylabel = "发生频次"
 
@@ -306,7 +324,7 @@ class Clientfile(pd.DataFrame):
 
         plot_hist(
             df=df,
-            savefile="plots/" + title + ".png",
+            savefile=self.savepath + title + ".png",
             show_kde=show_kde,
             show_tiles=show_tiles,
             show_metrics=show_metrics,
@@ -349,7 +367,7 @@ class Clientfile(pd.DataFrame):
             values = "档案数"  # 如果透视没设置values，题目为档案数，否则为values
         title = "%s分%s\n%s份额" % (self.name, index, values)
         plot_pie(
-            savefile="plots/" + "%s分%s%s份额" % (self.name, index, values) + ".png",
+            savefile=self.savepath + "%s分%s%s份额" % (self.name, index, values) + ".png",
             sizelist=df2,
             labellist=df2.index,
             focus=focus,
@@ -357,15 +375,24 @@ class Clientfile(pd.DataFrame):
         )
 
     # 绘制KPI综合展示图，以多个指标的横条型图同时展示为主
-    def plot_barh_kpi(self, index, dimension, mean_vline=False, filter=None, width=15, height=6, **kwargs):
+    def plot_barh_kpi(self, index, dimension, mean_vline=False, filter=None, width=15, height=6, pre=None, **kwargs):
         if dimension == "number":
             df = self.get_kpi_number(index=index, filter=filter)
+            if pre is not None:
+                df_pre = pre.get_kpi_number(index=index, filter=filter)
+                formats_diff = ["{:+,.0f}", "{:+,.0f}", "{:+,.1f}", "{:+,.0f}", "{:+,.1f}"]
+            else:
+                df_pre = None
             formats = ["{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}"]
-            title = "分%s档案数量相关综合情况" % index
+            title = "%s分%s档案数量相关综合情况" % (self.name, index)
         elif dimension == "potential":
             df = self.get_kpi_potential(index=index, filter=filter)
+            if pre is not None:
+                df_pre = pre.get_kpi_potential(index=index, filter=filter)
+            else:
+                df_pre = None
             formats = ["{:,.0f}", "{:,.0f}", "{:.0%}", "{:.0%}", "{:.0%}"]
-            title = "分%s档案潜力相关综合情况" % index
+            title = "%s分%s档案潜力相关综合情况" % (self.name, index)
 
         # 各指标平均值
         if mean_vline:
@@ -388,12 +415,14 @@ class Clientfile(pd.DataFrame):
 
         plot_grid_barh(
             df=df,
-            savefile="plots/" + title + ".png",
+            savefile=self.savepath + title + ".png",
             formats=formats,
             vline_value=mean_value,
             fontsize=fontsize,
             width=width,
             height=height,
+            df_pre=df_pre,
+            formats_diff=formats_diff,
         )
 
     # 绘制覆盖/潜力散点图
@@ -412,12 +441,12 @@ class Clientfile(pd.DataFrame):
         xlabel = "平均档案数:" + "{:,.0f}".format(xavg)
         ylabel = "平均潜力:" + "{:,.0f}".format(yavg)
 
-        title = "%s客户档案数 versus 平均潜力" % index
+        title = "%s%s客户档案数 versus 平均潜力" % (self.name, index)
         xtitle = "客户档案数"
         ytitle = "客户平均潜力（月累计相关病人数）"
 
         plot_bubble(
-            savefile="plots/" + title + ".png",
+            savefile=self.savepath + title + ".png",
             width=width,
             height=height,
             x=x,
@@ -452,12 +481,12 @@ class Clientfile(pd.DataFrame):
         z = [50] * len(x)
         labels = df.index
 
-        title = "IQVIA医院潜力 versus 客户档案医院潜力"
+        title = "%sIQVIA医院潜力 versus 客户档案医院潜力" % self.name
         xtitle = "IQVIA医院潜力（取对数）"
         ytitle = "客户档案医院潜力（取对数）"
 
         plot_bubble(
-            savefile="plots/" + title + ".png",
+            savefile=self.savepath + title + ".png",
             width=width,
             height=height,
             x=x,
@@ -490,42 +519,51 @@ def cleandata(df):
 
 if __name__ == "__main__":
     df_pre = pd.read_excel("20201130095848.xlsx")  # 作为对比的上个时期的档案数据
-    df = pd.read_excel("20201214093536.xlsx")  # 作为对比的上个时期的档案数据
+    df_post = pd.read_excel("20201214093536.xlsx")  # 作为对比的上个时期的档案数据
     df_decile = pd.read_excel("decile.xlsx")  # 医院Decile数据文件，用于Decile相关分析的匹配
-    df_pre = pd.merge(df_pre, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
-    df_pre = cleandata(df_pre)
-    df = pd.merge(df, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
-    df = cleandata(df)
 
+    df_pre["月份"] = 202011
+    df_post["月份"] = 202012
+    df_total = pd.concat([df_pre, df_post])
+    df_total = pd.merge(df_total, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
+    df_total = cleandata(df_total)
+
+    # df_pre = pd.merge(df_pre, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
+    # df_pre = cleandata(df_pre)
+    # df = pd.merge(df, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
+    # df = cleandata(df)
+    #
     # 分南北中国
     bu = "北中国"
-    df_pre = df_pre[df_pre["南北中国"] == bu]
-    df = df[df["南北中国"] == bu]
+    df_pre = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202011)]
+    df_post = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202012)]
+    df_total = df_total[df_total["南北中国"] == bu]
 
-    # df = df[df["区域"].isin(["华中区"])]
     pre = Clientfile(df_pre, name="北中国11月")
-    post = Clientfile(df, name="北中国12月")
+    post = Clientfile(df_post, name="北中国12月")
+    total = Clientfile(df_total, name="北中国")
 
     # P4
     # print(
-    #     "档案数：%s %s %s" % (df.shape[0], df.shape[0] - df_pre.shape[0], df.shape[0] / df_pre.shape[0] - 1),  # 共上传多少档案
+    #     "档案数：%s %s %s"
+    #     % (df_post.shape[0], df_post.shape[0] - df_pre.shape[0], df_post.shape[0] / df_pre.shape[0] - 1),  # 共上传多少档案
     #     "地区经理数：%s %s %s"
     #     % (
-    #         len(df["地区经理"].unique()),
-    #         len(df["地区经理"].unique()) - len(df_pre["地区经理"].unique()),
-    #         len(df["地区经理"].unique()) / len(df_pre["地区经理"].unique()) - 1,
+    #         len(df_post["地区经理"].unique()),
+    #         len(df_post["地区经理"].unique()) - len(df_pre["地区经理"].unique()),
+    #         len(df_post["地区经理"].unique()) / len(df_pre["地区经理"].unique()) - 1,
     #     ),  # 多少DSM上传
     #     "代表数数：%s %s %s"
     #     % (
-    #         len(df["负责代表"].unique()),
-    #         len(df["负责代表"].unique()) - len(df_pre["负责代表"].unique()),
-    #         len(df["负责代表"].unique()) / len(df_pre["负责代表"].unique()) - 1,
+    #         len(df_post["负责代表"].unique()),
+    #         len(df_post["负责代表"].unique()) - len(df_pre["负责代表"].unique()),
+    #         len(df_post["负责代表"].unique()) / len(df_pre["负责代表"].unique()) - 1,
     #     ),  # 多少代表上传
     #     "医院数：%s %s %s"
     #     % (
-    #         len(df["医院"].unique()),
-    #         len(df["医院"].unique()) - len(df_pre["医院"].unique()),
-    #         len(df["医院"].unique()) / len(df_pre["医院"].unique()) - 1,
+    #         len(df_post["医院"].unique()),
+    #         len(df_post["医院"].unique()) - len(df_pre["医院"].unique()),
+    #         len(df_post["医院"].unique()) / len(df_pre["医院"].unique()) - 1,
     #     ),  # 覆盖多少医院
     # )
     # P5
@@ -573,23 +611,28 @@ if __name__ == "__main__":
 
     # P6
     # # 客户档案基本分布情况
-    pre.plot_pie_share(index="医院层级")  # 对比周期医院层级份额饼图
-    pre.plot_pie_share(index="科室", focus="社区医院")  # 对比周期科室份额饼图
-    pre.plot_pie_share(index="职称")  # 对比周期职称份额饼图
-    post.plot_pie_share(index="医院层级")  # 当前周期医院层级份额饼图
-    post.plot_pie_share(index="科室", focus="社区医院")  # 当前周期科室份额饼图
-    post.plot_pie_share(index="职称")  # 当前周期职称份额饼图
+    # total.plot_barline_dist(index="月份", columns="医院层级", values=None, perc=True, format_perc="{:.1%}", width=2, height=6)
+    # total.plot_barline_dist(index="月份", columns="科室", values=None, perc=True, format_perc="{:.1%}", width=2, height=6)
+    # total.plot_barline_dist(index="月份", columns="职称", values=None, perc=True, format_perc="{:.1%}", width=2, height=6)
+    # P6备用
+    # pre.plot_pie_share(index="医院层级")  # 对比周期医院层级份额饼图
+    # pre.plot_pie_share(index="科室", focus="社区医院")  # 对比周期科室份额饼图
+    # pre.plot_pie_share(index="职称")  # 对比周期职称份额饼图
+    # post.plot_pie_share(index="医院层级")  # 当前周期医院层级份额饼图
+    # post.plot_pie_share(index="科室", focus="社区医院")  # 当前周期科室份额饼图
+    # post.plot_pie_share(index="职称")  # 当前周期职称份额饼图
     #
-    # c.plot_barh_kpi(index="医院层级", dimension="number") # P7分医院层级档案数量相关指标汇总
-    # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="number") # P8分IQVIA医院潜力分位档案数量相关指标汇总
-    # c.plot_barh_kpi(index="科室", dimension="number") # P9分科室档案数量相关指标汇总
-    # c.plot_barh_kpi(index="职称", dimension="number") # P10分职称档案数量相关指标汇总
+    # post.plot_barh_kpi(index="医院层级", dimension="number", pre=pre)  # P7分医院层级档案数量相关指标汇总
+    # post.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="number", pre=pre) # P8分IQVIA医院潜力分位档案数量相关指标汇总
+    # post.plot_barh_kpi(index="科室", dimension="number", pre=pre) # P9分科室档案数量相关指标汇总
+    # post.plot_barh_kpi(index="职称", dimension="number", pre=pre) # P10分职称档案数量相关指标汇总
     #
-    # c.plot_barh_kpi(index="区域", dimension="number", mean_vline=True) # P11分区域档案数量相关指标汇总
-    # c.plot_barh_kpi(index="大区", dimension="number", mean_vline=True) # P12分大区档案数量相关指标汇总
+    # post.plot_barh_kpi(index="区域", dimension="number", mean_vline=True, pre=pre) # P11分区域档案数量相关指标汇总
+    # post.plot_barh_kpi(index="大区", dimension="number", mean_vline=True, pre=pre) # P12分大区档案数量相关指标汇总
     # # P13-20
-    # c.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False)
-    # c.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=True)
+    # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False)
+    # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False, pre=pre)
+    # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=True)
     # c.plot_barline_dist(index="大区", columns="IQVIA医院潜力分位", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="IQVIA医院潜力分位", values=None, perc=True)
     # c.plot_barline_dist(index="大区", columns="科室", values=None, perc=False)
@@ -597,7 +640,7 @@ if __name__ == "__main__":
     # c.plot_barline_dist(index="大区", columns="职称", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="职称", values=None, perc=True)
     # P21-23 各地区经理档案数量相关指标汇总
-    # c.plot_barh_kpi(index="地区经理", dimension="number", range=[0, 19], fontsize=12, mean_vline=True)
+    post.plot_barh_kpi(index="地区经理", dimension="number", range=[0, 19], fontsize=12, mean_vline=True, pre=pre)
     # c.plot_barh_kpi(index="地区经理", dimension="number", range=[19, 38], fontsize=12, mean_vline=True)
     # c.plot_barh_kpi(index="地区经理", dimension="number", range=[38, 57], fontsize=12, mean_vline=True)
     #

@@ -18,7 +18,8 @@ mpl.rcParams["axes.unicode_minus"] = False
 mpl.rcParams.update({"font.size": 16})
 sns.set_style("white", {"font.sans-serif": ["simhei", "Arial"]})
 
-myfont = fm.FontProperties(fname="C:/Windows/Fonts/msyh.ttc")
+MYFONT = fm.FontProperties(fname="C:/Windows/Fonts/msyh.ttc")
+NUM_FONT = {"fontname": "Calibri"}
 
 COLOR_DICT = {
     "拜阿司匹灵": "navy",
@@ -118,15 +119,17 @@ def get_cmap(n, name="hsv"):
     return plt.cm.get_cmap(name, n)
 
 
-def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=15, height=6):
+def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=15, height=6, df_pre=None, formats_diff=None):
     fig = plt.figure(figsize=(width, height), facecolor="white")
 
     gs = gridspec.GridSpec(1, df.shape[1])  # 布局为1行多列
-    gs.update(wspace=0, hspace=0)  # grid各部分之间紧挨，space设为0.
+    gs.update(wspace=0.2, hspace=0)  # grid各部分之间紧挨，space设为0.
 
     for i in range(df.shape[1]):
         ax = plt.subplot(gs[i])
         df_bar = df.iloc[:, i]
+        if df_pre is not None:
+            df_diff = df_bar - df_pre.iloc[:, i]
 
         ax = df_bar.plot(kind="barh", alpha=0.8, color=COLOR_LIST[i], edgecolor="black", zorder=3)
 
@@ -141,7 +144,38 @@ def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=1
                 ha = "center"
                 fontcolor = "white"
 
+            # 添加绝对值数字标签
             ax.text(pos_x, j, formats[i].format(v), ha=ha, va="center", color=fontcolor, fontsize=fontsize)
+            # 添加和pre差值数字标签
+            if df_pre is not None:
+                idx = df_bar.index[j]
+                v_diff = df_diff.loc[idx]
+
+                # 正负色
+                if v_diff > 0:
+                    edgecolor_diff = "green"
+                elif v_diff < 0:
+                    edgecolor_diff = "red"
+                else:
+                    edgecolor_diff = "darkorange"
+
+                # # 下列代码将所有各列的格式都在正值前添加+号
+                # str_list = list(formats[i])
+                # str_list.insert(2, "+")
+                # format_diff = "".join(str_list)
+                # print(format_diff)
+
+                t = ax.text(
+                    ax.get_xlim()[1] * 1.1,
+                    j,
+                    formats_diff[i].format(v_diff),
+                    ha="center",
+                    va="center",
+                    color="black",
+                    fontsize=fontsize * 0.7,
+                    **NUM_FONT
+                )
+                t.set_bbox(dict(facecolor=edgecolor_diff, alpha=0.25, edgecolor=edgecolor_diff))
             ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
 
         # 添加平均值竖线
@@ -163,7 +197,7 @@ def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=1
             ax.set_yticklabels([])
         ax.set_xticklabels([])
 
-        ax.set_xlabel(df.columns[i], fontproperties=myfont, fontsize=14)  # x轴标题为df的列名
+        ax.set_xlabel(df.columns[i], fontproperties=MYFONT, fontsize=14)  # x轴标题为df的列名
         ax.xaxis.set_label_position("top")  # x轴标题改为在图表上方
         ax.yaxis.label.set_visible(False)  # 删除y轴标题
 
@@ -362,9 +396,9 @@ def plot_line(
         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: "{:.0%}".format(y)))
 
     # Add titles
-    plt.title(title, fontproperties=myfont, fontsize=18)
-    plt.xlabel(xtitle, fontproperties=myfont)
-    plt.ylabel(ytitle, fontproperties=myfont)
+    plt.title(title, fontproperties=MYFONT, fontsize=18)
+    plt.xlabel(xtitle, fontproperties=MYFONT)
+    plt.ylabel(ytitle, fontproperties=MYFONT)
 
     # Shrink current axis by 20% and put a legend to the right of the current axis
     box = ax.get_position()
@@ -405,9 +439,9 @@ def plot_line_simple(df, savefile, width=15, height=6, xlabelrotation=0, yfmt="{
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: yfmt.format(y)))
 
     # Add titles
-    plt.title(title, fontproperties=myfont, fontsize=18)
-    plt.xlabel(xtitle, fontproperties=myfont)
-    plt.ylabel(ytitle, fontproperties=myfont)
+    plt.title(title, fontproperties=MYFONT, fontsize=18)
+    plt.xlabel(xtitle, fontproperties=MYFONT)
+    plt.ylabel(ytitle, fontproperties=MYFONT)
 
     # Shrink current axis by 20% and put a legend to the right of the current axis
     box = ax.get_position()
@@ -438,15 +472,15 @@ def plot_barh(
     for item in df.columns.tolist():
         colors.append(COLOR_DICT[item])
     ax = df.plot(kind="barh", stacked=stacked, figsize=(width, height), alpha=0.8, edgecolor="black", color=colors)
-    plt.title(title, fontproperties=myfont, fontsize=18)
-    plt.xlabel(xtitle, fontproperties=myfont)
-    plt.ylabel(ytitle, fontproperties=myfont)
+    plt.title(title, fontproperties=MYFONT, fontsize=18)
+    plt.xlabel(xtitle, fontproperties=MYFONT)
+    plt.ylabel(ytitle, fontproperties=MYFONT)
     plt.axvline(x=0, linewidth=2, color="r")
 
     if haslegend == True:
-        plt.legend(loc="center left", bbox_to_anchor=(1.0, 0.5), prop=myfont, fontsize=12)
+        plt.legend(loc="center left", bbox_to_anchor=(1.0, 0.5), prop=MYFONT, fontsize=12)
     else:
-        plt.legend(prop=myfont)
+        plt.legend(prop=MYFONT)
 
     # plt.setp(ax.get_xticklabels(), rotation=0, horizontalalignment='center')
     #
@@ -480,7 +514,7 @@ def plot_barh(
                 ha="center",
                 va="center",
                 color=color,
-                fontproperties=myfont,
+                fontproperties=MYFONT,
                 fontsize=10,
             )
 
@@ -529,7 +563,7 @@ def plot_pie(savefile, sizelist, labellist, focus, title):
             autotext.set_color("r")
 
     # Add title at the center
-    plt.text(0, 0, title, horizontalalignment="center", verticalalignment="center", size=20, fontproperties=myfont)
+    plt.text(0, 0, title, horizontalalignment="center", verticalalignment="center", size=20, fontproperties=MYFONT)
 
     # Combine circle part and pie part
     fig = plt.gcf()
@@ -601,7 +635,7 @@ def plot_bubble(
                 ha="center",
                 va="center",
                 multialignment="center",
-                fontproperties=myfont,
+                fontproperties=MYFONT,
                 fontsize=10,
                 zorder=10,
             )
@@ -618,7 +652,7 @@ def plot_bubble(
             va="center",
             color="grey",
             multialignment="center",
-            fontproperties=myfont,
+            fontproperties=MYFONT,
             fontsize=10,
         )
     if xavgline == True:
@@ -630,13 +664,13 @@ def plot_bubble(
             va="top",
             color="grey",
             multialignment="center",
-            fontproperties=myfont,
+            fontproperties=MYFONT,
             fontsize=10,
         )
 
-    plt.title(title, fontproperties=myfont)
-    plt.xlabel(xtitle, fontproperties=myfont, fontsize=12)
-    plt.ylabel(ytitle, fontproperties=myfont, fontsize=12)
+    plt.title(title, fontproperties=MYFONT)
+    plt.xlabel(xtitle, fontproperties=MYFONT, fontsize=12)
+    plt.ylabel(ytitle, fontproperties=MYFONT, fontsize=12)
 
     # Save the figure
     save_plot(savefile)
@@ -703,7 +737,7 @@ def plot_bubble_with_reg(
                 ha="center",
                 va="center",
                 multialignment="center",
-                fontproperties=myfont,
+                fontproperties=MYFONT,
                 fontsize=10,
             )
             for i in range(len(labels[:labelLimit]))
@@ -719,7 +753,7 @@ def plot_bubble_with_reg(
             va="center",
             color="r",
             multialignment="center",
-            fontproperties=myfont,
+            fontproperties=MYFONT,
             fontsize=10,
         )
     if xavgline == True:
@@ -731,7 +765,7 @@ def plot_bubble_with_reg(
             va="top",
             color="r",
             multialignment="center",
-            fontproperties=myfont,
+            fontproperties=MYFONT,
             fontsize=10,
         )
 
@@ -766,9 +800,9 @@ def plot_bubble_with_reg(
         ax.plot(x2, y2 - pi, "--", color="0.5", label="95% Prediction Limits")
         ax.plot(x2, y2 + pi, "--", color="0.5")
 
-    plt.title(title, fontproperties=myfont)
-    plt.xlabel(xtitle, fontproperties=myfont, fontsize=12)
-    plt.ylabel(ytitle, fontproperties=myfont, fontsize=12)
+    plt.title(title, fontproperties=MYFONT)
+    plt.xlabel(xtitle, fontproperties=MYFONT, fontsize=12)
+    plt.ylabel(ytitle, fontproperties=MYFONT, fontsize=12)
 
     # Save the figure
     save_plot(savefile)
@@ -864,9 +898,9 @@ def plot_dual_line(
     ax.yaxis.set_major_formatter(plt.NullFormatter())
 
     # Add titles
-    plt.title(title1, fontproperties=myfont, fontsize=18)
-    plt.xlabel(xtitle1, fontproperties=myfont)
-    plt.ylabel(ytitle1, fontproperties=myfont)
+    plt.title(title1, fontproperties=MYFONT, fontsize=18)
+    plt.xlabel(xtitle1, fontproperties=MYFONT)
+    plt.ylabel(ytitle1, fontproperties=MYFONT)
 
     ax = plt.subplot(1, 2, 2)
     count = 0
@@ -933,9 +967,9 @@ def plot_dual_line(
     ax.yaxis.set_major_formatter(plt.NullFormatter())
 
     # Add titles
-    plt.title(title2, fontproperties=myfont, fontsize=18)
-    plt.xlabel(xtitle2, fontproperties=myfont)
-    plt.ylabel(ytitle2, fontproperties=myfont)
+    plt.title(title2, fontproperties=MYFONT, fontsize=18)
+    plt.xlabel(xtitle2, fontproperties=MYFONT)
+    plt.ylabel(ytitle2, fontproperties=MYFONT)
 
     # Shrink current axis by 20% and put a legend to the right of the current axis
     # box = ax.get_position()
@@ -945,52 +979,6 @@ def plot_dual_line(
     # ymax = ax.get_ylim()[1]
     # if ymax > 3:
     #     ax.set_ylim(ymin=-1, ymax=3)
-
-    # Save the figure
-    save_plot(savefile)
-
-
-def plot_bar_line(
-    x,
-    y_bar,
-    y_line1,
-    y_line2,
-    savefile,
-    y_bar_label,
-    y_line1_label,
-    y_line2_label,
-    width=14,
-    height=8,
-    unit="(亿)",
-    title=None,
-    ymin=0,
-    ymax=None,
-):
-
-    fig, ax = plt.subplots()
-    fig.set_size_inches(width, height)
-    ax2 = ax.twinx()  # Create another axes that shares the same x-axis as ax.
-
-    ax.bar(x, y_bar, color="teal", width=15, label=y_bar_label)
-    ax2.plot(
-        x, y_line1, color="crimson", label=y_line1_label, linewidth=3, marker="o", markersize=9, markerfacecolor="white"
-    )
-    ax2.plot(
-        x, y_line2, color="orange", label=y_line2_label, linewidth=3, marker="o", markersize=9, markerfacecolor="white"
-    )
-    ax2.set_ylim(ymin, ymax)
-    ax.set_ylabel("滚动年销售额" + unit)
-    ax2.set_ylabel("同比增长率")
-    ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: "{:,.1f}".format(y)))
-    ax2.yaxis.set_major_formatter(FuncFormatter(lambda y, _: "{:+.0%}".format(y)))
-
-    lines, labels = ax.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines + lines2, labels + labels2, loc=2)
-
-    ax.grid(which="major", axis="both", linestyle=":", linewidth="1", color="grey")
-
-    plt.title(title, fontproperties=myfont, fontsize=20)
 
     # Save the figure
     save_plot(savefile)
@@ -1014,11 +1002,12 @@ def plot_barline(
 
     ax = df_bar.plot(kind="bar", stacked=stacked, figsize=(width, height), alpha=0.8, edgecolor="black")
 
-    plt.title(title, fontproperties=myfont, fontsize=18)
-    plt.xlabel(xtitle, fontproperties=myfont)
-    plt.ylabel(ytitle, fontproperties=myfont)
+    plt.title(title, fontproperties=MYFONT, fontsize=18)
+    plt.xlabel(xtitle, fontproperties=MYFONT)
+    plt.ylabel(ytitle, fontproperties=MYFONT)
 
-    plt.legend(loc="center left", bbox_to_anchor=(1.0, 0.5))
+    bars, labels = ax.get_legend_handles_labels()
+    plt.legend(bars[::-1], labels[::-1], loc="center left", bbox_to_anchor=(1.0, 0.5))
     # plt.setp(ax.get_xticklabels(), rotation=0, horizontalalignment='center')
 
     # ax.xaxis.set_major_formatter(FuncFormatter(lambda y, _: xfmt.format(y)))
@@ -1035,7 +1024,11 @@ def plot_barline(
     patches = ax.patches
     for label, rect in zip(labels, patches):
         height = rect.get_height()
-        if height > 0.015:
+        # 负数则添加纹理
+        if height < 0:
+            rect.set_hatch("//")
+        # 隐藏过小的数
+        if abs(height) > 0.015:
             x = rect.get_x()
             y = rect.get_y()
             width = rect.get_width()
@@ -1046,7 +1039,7 @@ def plot_barline(
                 ha="center",
                 va="center",
                 color="white",
-                fontproperties=myfont,
+                fontproperties=MYFONT,
                 fontsize=10,
             )
 
@@ -1132,7 +1125,7 @@ def plot_twinbar(
     #             ha="center",
     #             va="center",
     #             color="white",
-    #             fontproperties=myfont,
+    #             fontproperties=MYFONT,
     #             fontsize=10,
     #         )
 
