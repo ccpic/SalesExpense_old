@@ -64,10 +64,19 @@ class Clientfile(pd.DataFrame):
             self.cls = cls
 
         def __call__(self, *args, **kwargs):
+            kwargs['name'] = None
             return self.cls(*args, **kwargs)
 
         def _from_axes(self, *args, **kwargs):
             return self.cls._from_axes(*args, **kwargs)
+
+    def __init__(self, data, name, index=None, columns=None, dtype=None, copy=True):
+        super(Clientfile, self).__init__(data=data,
+                                      index=index,
+                                      columns=columns,
+                                      dtype=dtype,
+                                      copy=copy)
+        self.name = name
 
     # 根据列名和列值做数据筛选
     def filtered(self, filter=None):
@@ -269,6 +278,7 @@ class Clientfile(pd.DataFrame):
         xlim=None,
         width=15,
         height=6,
+        pre=None,
     ):
         if filter is not None:
             df = self.filtered(filter)
@@ -289,6 +299,11 @@ class Clientfile(pd.DataFrame):
             xlabel = "客户档案数量"
         ylabel = "发生频次"
 
+        if pre is not None:
+            df_pre = pre.get_dist(index=index, columns=None)
+        else:
+            df_pre = None
+
         plot_hist(
             df=df,
             savefile="plots/" + title + ".png",
@@ -303,6 +318,7 @@ class Clientfile(pd.DataFrame):
             ylabel=ylabel,
             width=width,
             height=height,
+            df_pre=df_pre,
         )
 
     # 绘制份额饼图
@@ -331,9 +347,9 @@ class Clientfile(pd.DataFrame):
 
         if values is None:
             values = "档案数"  # 如果透视没设置values，题目为档案数，否则为values
-        title = "分%s\n%s份额" % (index, values)
+        title = "%s分%s\n%s份额" % (self.name, index, values)
         plot_pie(
-            savefile="plots/" + "分%s%s份额" % (index, values) + ".png",
+            savefile="plots/" + "%s分%s%s份额" % (self.name, index, values) + ".png",
             sizelist=df2,
             labellist=df2.index,
             focus=focus,
@@ -473,28 +489,48 @@ def cleandata(df):
 
 
 if __name__ == "__main__":
-    df = pd.read_excel("20201130095848.xlsx")
-    df_decile = pd.read_excel("decile.xlsx")
-    print(df, df_decile)
+    df_pre = pd.read_excel("20201130095848.xlsx")  # 作为对比的上个时期的档案数据
+    df = pd.read_excel("20201214093536.xlsx")  # 作为对比的上个时期的档案数据
+    df_decile = pd.read_excel("decile.xlsx")  # 医院Decile数据文件，用于Decile相关分析的匹配
+    df_pre = pd.merge(df_pre, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
+    df_pre = cleandata(df_pre)
     df = pd.merge(df, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
     df = cleandata(df)
 
-    # 南中国
-    df = df[df["南北中国"] == "北中国"]
+    # 分南北中国
+    bu = "北中国"
+    df_pre = df_pre[df_pre["南北中国"] == bu]
+    df = df[df["南北中国"] == bu]
 
     # df = df[df["区域"].isin(["华中区"])]
-    c = Clientfile(df)
+    pre = Clientfile(df_pre, name="北中国11月")
+    post = Clientfile(df, name="北中国12月")
 
     # P4
     # print(
-    #     "档案数：%s" % df.shape[0],  # 共上传多少档案
-    #     "地区经理数：%s" % len(df["地区经理"].unique()),  # 多少DSM上传
-    #     "代表数数：%s" % len(df["负责代表"].unique()),  # 多少代表上传
-    #     "医院数：%s" % len(df["医院"].unique()),  # 覆盖多少医院
+    #     "档案数：%s %s %s" % (df.shape[0], df.shape[0] - df_pre.shape[0], df.shape[0] / df_pre.shape[0] - 1),  # 共上传多少档案
+    #     "地区经理数：%s %s %s"
+    #     % (
+    #         len(df["地区经理"].unique()),
+    #         len(df["地区经理"].unique()) - len(df_pre["地区经理"].unique()),
+    #         len(df["地区经理"].unique()) / len(df_pre["地区经理"].unique()) - 1,
+    #     ),  # 多少DSM上传
+    #     "代表数数：%s %s %s"
+    #     % (
+    #         len(df["负责代表"].unique()),
+    #         len(df["负责代表"].unique()) - len(df_pre["负责代表"].unique()),
+    #         len(df["负责代表"].unique()) / len(df_pre["负责代表"].unique()) - 1,
+    #     ),  # 多少代表上传
+    #     "医院数：%s %s %s"
+    #     % (
+    #         len(df["医院"].unique()),
+    #         len(df["医院"].unique()) - len(df_pre["医院"].unique()),
+    #         len(df["医院"].unique()) / len(df_pre["医院"].unique()) - 1,
+    #     ),  # 覆盖多少医院
     # )
     # P5
-    # # 各医院客户档案覆盖数量分布
-    # c.plot_hist_dist(
+    # 各医院客户档案覆盖数量分布
+    # post.plot_hist_dist(
     #     pivoted=True,
     #     index="医院",
     #     bins=50,
@@ -504,10 +540,11 @@ if __name__ == "__main__":
     #     xlim=[0, 200],
     #     width=6,
     #     height=8,
+    #     pre=pre,
     # )
-    #
+
     # # 各地区经理客户档案上传数量分布
-    # c.plot_hist_dist(
+    # post.plot_hist_dist(
     #     pivoted=True,
     #     index="地区经理",
     #     bins=10,
@@ -517,10 +554,11 @@ if __name__ == "__main__":
     #     xlim=[0, 700],
     #     width=6,
     #     height=8,
+    #     pre=pre
     # )
-    #
+
     # # 各负责代表客户档案上传数量分布
-    # c.plot_hist_dist(
+    # post.plot_hist_dist(
     #     pivoted=True,
     #     index="负责代表",
     #     bins=30,
@@ -530,12 +568,17 @@ if __name__ == "__main__":
     #     xlim=[0, 200],
     #     width=6,
     #     height=8,
+    #     pre=pre
     # )
+
     # P6
     # # 客户档案基本分布情况
-    # c.plot_pie_share(index="医院层级")  # 医院层级份额饼图
-    # c.plot_pie_share(index="科室", focus="社区医院")  # 科室份额饼图
-    # c.plot_pie_share(index="职称")  # 职称份额饼图
+    pre.plot_pie_share(index="医院层级")  # 对比周期医院层级份额饼图
+    pre.plot_pie_share(index="科室", focus="社区医院")  # 对比周期科室份额饼图
+    pre.plot_pie_share(index="职称")  # 对比周期职称份额饼图
+    post.plot_pie_share(index="医院层级")  # 当前周期医院层级份额饼图
+    post.plot_pie_share(index="科室", focus="社区医院")  # 当前周期科室份额饼图
+    post.plot_pie_share(index="职称")  # 当前周期职称份额饼图
     #
     # c.plot_barh_kpi(index="医院层级", dimension="number") # P7分医院层级档案数量相关指标汇总
     # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="number") # P8分IQVIA医院潜力分位档案数量相关指标汇总

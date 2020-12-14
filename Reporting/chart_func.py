@@ -185,6 +185,7 @@ def plot_hist(
     ylabel=None,
     width=16,
     height=5,
+    df_pre=None,
 ):
     fig, ax = plt.subplots(figsize=(width, height))
     df.plot(kind="hist", density=True, bins=bins, ax=ax, color="grey", legend=None, alpha=0.5)
@@ -236,6 +237,9 @@ def plot_hist(
     if show_metrics:
         median = np.median(df.values)  # 计算中位数
         mean = np.mean(df.values)  # 计算平均数
+        if df_pre is not None:
+            median_pre = np.median(df_pre.values)  # 计算对比中位数
+            mean_pre = np.mean(df_pre.values)  # 计算对比平均数
 
         if median > mean:
             yindex_median = 0.95
@@ -249,10 +253,22 @@ def plot_hist(
             pos_mean = "left"
 
         ax.axvline(median, color="crimson", linestyle=":")
-        ax.text(median, ax.get_ylim()[1] * yindex_median, "中位数：" + str(int(median)), ha=pos_median, color="crimson")
+        ax.text(
+            median,
+            ax.get_ylim()[1] * yindex_median,
+            "中位数：%s(%s)" % ("{:.0f}".format(median), "{:+.0f}".format(median - median_pre)),
+            ha=pos_median,
+            color="crimson",
+        )
 
         ax.axvline(mean, color="purple", linestyle=":")
-        ax.text(mean, ax.get_ylim()[1] * yindex_mean, "平均数：" + str(int(mean)), ha=pos_mean, color="purple")
+        ax.text(
+            mean,
+            ax.get_ylim()[1] * yindex_mean,
+            "平均数：%s(%s)" % ("{:.1f}".format(mean), "{:+.1f}".format(mean - mean_pre)),
+            ha=pos_mean,
+            color="purple",
+        )
 
     # Save the figure
     save_plot(savefile)
