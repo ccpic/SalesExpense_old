@@ -388,7 +388,7 @@ class Clientfile(pd.DataFrame):
             df = self.get_kpi_number(index=index, filter=filter)
             if pre is not None:
                 df_pre = pre.get_kpi_number(index=index, filter=filter)
-                formats_diff = ["{:+,.0f}", "{:+,.0f}", "{:+,.1f}", "{:+,.0f}", "{:+,.1f}"]
+                formats_diff = ["{:+,.0f}", "{:+,.0f}", "{:+,.0f}", "{:+,.0f}", "{:+,.0f}"]
             else:
                 df_pre = None
             formats = ["{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}"]
@@ -417,7 +417,7 @@ class Clientfile(pd.DataFrame):
                 # )
                 # df_pre = pd.concat([potential_pre, potential_by_group_pre], axis=1)
                 df_pre = pre.get_dist(index=index, filter=filter, columns=columns, values="月累计相关病人数", aggfunc=np.mean)
-                formats_diff = ["{:+,.1f}"] * df_pre.shape[1]
+                formats_diff = ["{:+,.0f}"] * df_pre.shape[1]
             else:
                 df_pre = None
                 formats_diff = None
@@ -435,7 +435,7 @@ class Clientfile(pd.DataFrame):
                     index=index, filter=filter, columns=columns, values="医院", aggfunc=lambda x: len(x.unique())
                 )
                 df_pre = client_number_by_group_pre / hosp_number_by_group_pre
-                formats_diff = ["{:+,.1f}"] * df_pre.shape[1]
+                formats_diff = ["{:+,.0f}"] * df_pre.shape[1]
             else:
                 df_pre = None
                 formats_diff = None
@@ -464,6 +464,7 @@ class Clientfile(pd.DataFrame):
             df=df,
             savefile=self.savepath + title + ".png",
             formats=formats,
+            title=title,
             vline_value=mean_value,
             fontsize=fontsize,
             width=width,
@@ -688,9 +689,10 @@ if __name__ == "__main__":
     # post.plot_barh_kpi(index="科室", dimension="number", pre=pre) # P9分科室档案数量相关指标汇总
     # post.plot_barh_kpi(index="职称", dimension="number", pre=pre) # P10分职称档案数量相关指标汇总
     #
-    # post.plot_barh_kpi(index="区域", dimension="number", mean_vline=True, pre=pre) # P11分区域档案数量相关指标汇总
+    # post.plot_barh_kpi(index="区域", dimension="number", pre=pre) # P11分区域档案数量相关指标汇总
     # post.plot_barh_kpi(index="大区", dimension="number", mean_vline=True, pre=pre) # P12分大区档案数量相关指标汇总
-    # # P13-20
+
+    # P13-20
     # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False)
     # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False, pre=pre)
     # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=True)
@@ -716,20 +718,21 @@ if __name__ == "__main__":
     # c.plot_barh_kpi(index="科室", dimension="potential") # P30 分科室档案潜力相关指标汇总
     # c.plot_barh_kpi(index="职称", dimension="potential") # P31 分职称层级档案潜力相关指标汇总
     #
-    # c.plot_barh_kpi(index="区域", dimension="potential", mean_vline=True) # P32 分区域层级档案潜力相关指标汇总
-    # c.plot_barh_kpi(index="大区", dimension="potential", mean_vline=True) # P33 分大区层级档案潜力相关指标汇总
+    # post.plot_barh_kpi(index="区域", dimension="potential", mean_vline=True, pre=pre) # P32 分区域层级档案潜力相关指标汇总
+    # post.plot_barh_kpi(index="大区", dimension="potential", mean_vline=True, pre=pre) # P33 分大区层级档案潜力相关指标汇总
 
     # c.plot_barh_kpi(index="医院", dimension="potential", filter={"IQVIA医院潜力分位": ["D10"]}, width=15, heigh=15)
     # c.plot_barh_kpi(index="医院", dimension="potential", filter={"IQVIA医院潜力分位": ["D9"]}, width=15, heigh=8)
 
     # P34-36 分地区经理层级档案潜力相关指标汇总
-    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[0, 19], fontsize=12, mean_vline=True)
-    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[19, 38], fontsize=12, mean_vline=True)
+    # post.plot_barh_kpi(index="地区经理", dimension="potential", range=[0, 19], fontsize=12, mean_vline=True)
+    # post.plot_barh_kpi(index="地区经理", dimension="potential", range=[19, 38], fontsize=12, mean_vline=True)
     # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[38, 57], fontsize=12, mean_vline=True)
 
     # P38-39 数量 versus 潜力 交叉分析
     # c.plot_bubble_number_potential("大区", z_scale=0.02, labelLimit=100)
     # post.plot_bubble_number_potential("地区经理", z_scale=0.05, labelLimit=100, dimension="rsp")
     # c.plot_bubble_number_potential("IQVIA医院潜力分位", z_scale=0.02, labelLimit=100)
-    post.plot_barh_kpi(index="大区", dimension="number_by_group", columns="医院层级", mean_vline=True)
-    post.plot_barh_kpi(index="大区", dimension="potential_by_group", columns="医院层级", mean_vline=True)
+
+    # post.plot_barh_kpi(index="大区", dimension="number_by_group", columns="医院层级", mean_vline=True)
+    # post.plot_barh_kpi(index="地区经理", dimension="potential_by_group", columns="医院层级", mean_vline=True, range=[0, 19], fontsize=12)

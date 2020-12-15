@@ -120,14 +120,16 @@ def get_cmap(n, name="hsv"):
     return plt.cm.get_cmap(name, n)
 
 
-def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=15, height=6, df_pre=None, formats_diff=None):
+def plot_grid_barh(
+    df, savefile, formats, title=None, vline_value=None, fontsize=16, width=15, height=6, df_pre=None, formats_diff=None
+):
     fig = plt.figure(figsize=(width, height), facecolor="white")
 
     gs = gridspec.GridSpec(1, df.shape[1])  # 布局为1行多列
     if df_pre is None:
-        wspace=0
+        wspace = 0
     else:
-        wspace=0.2
+        wspace = 0.2
     gs.update(wspace=wspace, hspace=0)  # grid各部分之间紧挨，space设为0.
 
     for i in range(df.shape[1]):
@@ -179,10 +181,10 @@ def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=1
                         va="center",
                         color="black",
                         fontsize=fontsize * 0.7,
-                        zorder=5,
+                        zorder=20,
                         **NUM_FONT
                     )
-                    t.set_bbox(dict(facecolor=edgecolor_diff, alpha=0.25, edgecolor=edgecolor_diff))
+                    t.set_bbox(dict(facecolor=edgecolor_diff, alpha=0.25, edgecolor=edgecolor_diff, zorder=20))
             ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
 
         # 添加平均值竖线
@@ -207,6 +209,9 @@ def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=1
         ax.set_xlabel(df.columns[i], fontproperties=MYFONT, fontsize=14)  # x轴标题为df的列名
         ax.xaxis.set_label_position("top")  # x轴标题改为在图表上方
         ax.yaxis.label.set_visible(False)  # 删除y轴标题
+
+    # 添加总标题
+    plt.suptitle(title, fontproperties=MYFONT, fontsize=18)
 
     # Save the figure
     save_plot(savefile)
