@@ -11,6 +11,7 @@ import matplotlib.cm as cm
 import matplotlib.gridspec as gridspec
 from pandas.api.types import is_numeric_dtype
 import scipy.stats as stats
+import math
 
 mpl.rcParams["font.sans-serif"] = ["SimHei"]
 mpl.rcParams["font.serif"] = ["SimHei"]
@@ -123,7 +124,11 @@ def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=1
     fig = plt.figure(figsize=(width, height), facecolor="white")
 
     gs = gridspec.GridSpec(1, df.shape[1])  # 布局为1行多列
-    gs.update(wspace=0.2, hspace=0)  # grid各部分之间紧挨，space设为0.
+    if df_pre is None:
+        wspace=0
+    else:
+        wspace=0.2
+    gs.update(wspace=wspace, hspace=0)  # grid各部分之间紧挨，space设为0.
 
     for i in range(df.shape[1]):
         ax = plt.subplot(gs[i])
@@ -165,17 +170,19 @@ def plot_grid_barh(df, savefile, formats, vline_value=None, fontsize=16, width=1
                 # format_diff = "".join(str_list)
                 # print(format_diff)
 
-                t = ax.text(
-                    ax.get_xlim()[1] * 1.1,
-                    j,
-                    formats_diff[i].format(v_diff),
-                    ha="center",
-                    va="center",
-                    color="black",
-                    fontsize=fontsize * 0.7,
-                    **NUM_FONT
-                )
-                t.set_bbox(dict(facecolor=edgecolor_diff, alpha=0.25, edgecolor=edgecolor_diff))
+                if v_diff != 0 and math.isnan(v_diff) is False:
+                    t = ax.text(
+                        ax.get_xlim()[1] * 1.1,
+                        j,
+                        formats_diff[i].format(v_diff),
+                        ha="center",
+                        va="center",
+                        color="black",
+                        fontsize=fontsize * 0.7,
+                        zorder=5,
+                        **NUM_FONT
+                    )
+                    t.set_bbox(dict(facecolor=edgecolor_diff, alpha=0.25, edgecolor=edgecolor_diff))
             ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
 
         # 添加平均值竖线

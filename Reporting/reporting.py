@@ -109,8 +109,10 @@ class Clientfile(pd.DataFrame):
         return pivoted
 
     # 透视客户分布（对分类指标count/len，对量化指标sum）
-    def get_dist(self, index, columns, values=None, filter=None, perc=False, sort_values=True):
-        if values is None or values == "客户姓名":
+    def get_dist(self, index, columns, values=None, filter=None, perc=False, sort_values=True, **kwargs):
+        if "aggfunc" in kwargs:
+            aggfunc = kwargs["aggfunc"]
+        elif values is None or values == "客户姓名":
             values = "客户姓名"
             aggfunc = len
         else:
@@ -139,10 +141,14 @@ class Clientfile(pd.DataFrame):
 
     # 取得一对数据客户数和人均潜力
     def get_number_potential(self, index, filter=None, sort_values=True):
+
         client_number = self.get_client_number(index=index, filter=filter)
+        rsp_number = self.get_unique_count(values="负责代表", index=index, filter=filter)
         potential = self.get_avg(values="月累计相关病人数", index=index, filter=filter)
-        df = pd.concat([client_number, potential], axis=1)
-        df.columns = ["客户档案数", "客户平均潜力"]
+        df = pd.concat([client_number, rsp_number, potential], axis=1)
+        df.columns = ["客户档案数", "代表人数", "客户平均潜力"]
+
+        df["档案数/每位代表"] = df["客户档案数"] / df["代表人数"]
 
         df.drop("TBA", inplace=True, errors="ignore")
 
@@ -159,7 +165,7 @@ class Clientfile(pd.DataFrame):
         df_combined = df_combined[(df_combined.T != 0).any()]
 
         if sort_values is True:
-            df.sort_values(by="月累计相关病人数", axis=0, ascending=False, inplace=True)
+            df_combined.sort_values(by="月累计相关病人数", axis=0, ascending=False, inplace=True)
 
         return df_combined
 
@@ -375,7 +381,9 @@ class Clientfile(pd.DataFrame):
         )
 
     # 绘制KPI综合展示图，以多个指标的横条型图同时展示为主
-    def plot_barh_kpi(self, index, dimension, mean_vline=False, filter=None, width=15, height=6, pre=None, **kwargs):
+    def plot_barh_kpi(
+        self, index, dimension, mean_vline=False, filter=None, columns=None, width=15, height=6, pre=None, **kwargs
+    ):
         if dimension == "number":
             df = self.get_kpi_number(index=index, filter=filter)
             if pre is not None:
@@ -389,11 +397,50 @@ class Clientfile(pd.DataFrame):
             df = self.get_kpi_potential(index=index, filter=filter)
             if pre is not None:
                 df_pre = pre.get_kpi_potential(index=index, filter=filter)
+                formats_diff = ["{:+,.0f}", "{:+,.0f}", "{:+.0%}", "{:+.0%}", "{:+.0%}"]
             else:
                 df_pre = None
+                formats_diff = None
             formats = ["{:,.0f}", "{:,.0f}", "{:.0%}", "{:.0%}", "{:.0%}"]
             title = "%s分%s档案潜力相关综合情况" % (self.name, index)
-
+        elif dimension == "potential_by_group":
+            df = self.get_dist(index=index, filter=filter, columns=columns, values="月累计相关病人数", aggfunc=np.mean)
+            # potential = self.get_avg(values="月累计相关病人数", index=index, filter=filter)
+            # potential_by_group = self.get_dist(
+            #     index=index, filter=filter, columns=columns, values="月累计相关病人数", aggfunc=np.mean
+            # )
+            # df = pd.concat([potential, potential_by_group], axis=1)
+            if pre is not None:
+                # potential_pre = pre.get_avg(values="月累计相关病人数", index=index, filter=filter)
+                # potential_by_group_pre = pre.get_dist(
+                #     index=index, filter=filter, columns=columns, values="月累计相关病人数", aggfunc=np.mean
+                # )
+                # df_pre = pd.concat([potential_pre, potential_by_group_pre], axis=1)
+                df_pre = pre.get_dist(index=index, filter=filter, columns=columns, values="月累计相关病人数", aggfunc=np.mean)
+                formats_diff = ["{:+,.1f}"] * df_pre.shape[1]
+            else:
+                df_pre = None
+                formats_diff = None
+            formats = ["{:,.0f}"] * df.shape[1]
+            title = "%s各%s分%s档案潜力汇总" % (self.name, index, columns)
+        elif dimension == "number_by_group":
+            client_number_by_group = self.get_dist(index=index, filter=filter, columns=columns)
+            hosp_number_by_group = self.get_dist(
+                index=index, filter=filter, columns=columns, values="医院", aggfunc=lambda x: len(x.unique())
+            )
+            df = client_number_by_group / hosp_number_by_group
+            if pre is not None:
+                client_number_by_group_pre = pre.get_dist(index=index, filter=filter, columns=columns)
+                hosp_number_by_group_pre = pre.get_dist(
+                    index=index, filter=filter, columns=columns, values="医院", aggfunc=lambda x: len(x.unique())
+                )
+                df_pre = client_number_by_group_pre / hosp_number_by_group_pre
+                formats_diff = ["{:+,.1f}"] * df_pre.shape[1]
+            else:
+                df_pre = None
+                formats_diff = None
+            formats = ["{:,.0f}"] * df.shape[1]
+            title = "%s各%s分%s档案单家医院平均数量汇总" % (self.name, index, columns)
         # 各指标平均值
         if mean_vline:
             mean_value = df.mean()
@@ -427,10 +474,24 @@ class Clientfile(pd.DataFrame):
 
     # 绘制覆盖/潜力散点图
     def plot_bubble_number_potential(
-        self, index, filter=None, z_scale=1.00, xlim=None, ylim=None, showLabel=True, labelLimit=15, width=15, height=6,
+        self,
+        index,
+        filter=None,
+        z_scale=1.00,
+        xlim=None,
+        ylim=None,
+        showLabel=True,
+        labelLimit=15,
+        width=15,
+        height=6,
+        dimension="total",
     ):
         df = self.get_number_potential(index=index, filter=filter)
-        x = df.loc[:, "客户档案数"]
+        if dimension == "total":
+            col = "客户档案数"
+        elif dimension == "rsp":
+            col = "档案数/每位代表"
+        x = df.loc[:, col]
         y = df.loc[:, "客户平均潜力"]
         z = x * y
         labels = df.index
@@ -438,11 +499,11 @@ class Clientfile(pd.DataFrame):
         # 平均数分隔线
         xavg = x.mean()
         yavg = y.mean()
-        xlabel = "平均档案数:" + "{:,.0f}".format(xavg)
+        xlabel = "平均%s%s:" % (col, "{:,.0f}".format(xavg))
         ylabel = "平均潜力:" + "{:,.0f}".format(yavg)
 
         title = "%s%s客户档案数 versus 平均潜力" % (self.name, index)
-        xtitle = "客户档案数"
+        xtitle = col
         ytitle = "客户平均潜力（月累计相关病人数）"
 
         plot_bubble(
@@ -519,7 +580,7 @@ def cleandata(df):
 
 if __name__ == "__main__":
     df_pre = pd.read_excel("20201130095848.xlsx")  # 作为对比的上个时期的档案数据
-    df_post = pd.read_excel("20201214093536.xlsx")  # 作为对比的上个时期的档案数据
+    df_post = pd.read_excel("20201215134151.xlsx")  # 作为对比的上个时期的档案数据
     df_decile = pd.read_excel("decile.xlsx")  # 医院Decile数据文件，用于Decile相关分析的匹配
 
     df_pre["月份"] = 202011
@@ -534,14 +595,14 @@ if __name__ == "__main__":
     # df = cleandata(df)
     #
     # 分南北中国
-    bu = "北中国"
+    bu = "南中国"
     df_pre = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202011)]
     df_post = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202012)]
     df_total = df_total[df_total["南北中国"] == bu]
 
-    pre = Clientfile(df_pre, name="北中国11月")
-    post = Clientfile(df_post, name="北中国12月")
-    total = Clientfile(df_total, name="北中国")
+    pre = Clientfile(df_pre, name="南中国11月")
+    post = Clientfile(df_post, name="南中国12月")
+    total = Clientfile(df_total, name="南中国")
 
     # P4
     # print(
@@ -640,7 +701,7 @@ if __name__ == "__main__":
     # c.plot_barline_dist(index="大区", columns="职称", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="职称", values=None, perc=True)
     # P21-23 各地区经理档案数量相关指标汇总
-    post.plot_barh_kpi(index="地区经理", dimension="number", range=[0, 19], fontsize=12, mean_vline=True, pre=pre)
+    # post.plot_barh_kpi(index="地区经理", dimension="number", range=[0, 19], fontsize=12, mean_vline=True, pre=pre)
     # c.plot_barh_kpi(index="地区经理", dimension="number", range=[19, 38], fontsize=12, mean_vline=True)
     # c.plot_barh_kpi(index="地区经理", dimension="number", range=[38, 57], fontsize=12, mean_vline=True)
     #
@@ -668,5 +729,7 @@ if __name__ == "__main__":
 
     # P38-39 数量 versus 潜力 交叉分析
     # c.plot_bubble_number_potential("大区", z_scale=0.02, labelLimit=100)
-    # c.plot_bubble_number_potential("地区经理", z_scale=0.01, labelLimit=100)
+    # post.plot_bubble_number_potential("地区经理", z_scale=0.05, labelLimit=100, dimension="rsp")
     # c.plot_bubble_number_potential("IQVIA医院潜力分位", z_scale=0.02, labelLimit=100)
+    post.plot_barh_kpi(index="大区", dimension="number_by_group", columns="医院层级", mean_vline=True)
+    post.plot_barh_kpi(index="大区", dimension="potential_by_group", columns="医院层级", mean_vline=True)
