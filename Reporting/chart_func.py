@@ -140,6 +140,18 @@ def plot_grid_barh(
 
         ax = df_bar.plot(kind="barh", alpha=0.8, color=COLOR_LIST[i], edgecolor="black", zorder=3)
 
+        # 添加平均值竖线
+        if vline_value is not None:
+            ax.axvline(vline_value[i], color=COLOR_LIST[i], linestyle="--", linewidth=1, zorder=1)
+            ax.text(
+                vline_value[i],
+                ax.get_ylim()[1] + 0.1,
+                "平均:" + formats[i].format(vline_value[i]),
+                va="top",
+                color=COLOR_LIST[i],
+                fontsize=fontsize,
+            )
+
         max_v = df_bar.values.max()
         for j, v in enumerate(df_bar.values):
             if v < max_v * 0.2:
@@ -186,18 +198,6 @@ def plot_grid_barh(
                     )
                     t.set_bbox(dict(facecolor=edgecolor_diff, alpha=0.25, edgecolor=edgecolor_diff, zorder=20))
             ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
-
-        # 添加平均值竖线
-        if vline_value is not None:
-            ax.axvline(vline_value[i], color=COLOR_LIST[i], linestyle="--", linewidth=1, zorder=1)
-            ax.text(
-                vline_value[i],
-                ax.get_ylim()[1] + 0.1,
-                "平均:" + formats[i].format(vline_value[i]),
-                va="top",
-                color=COLOR_LIST[i],
-                fontsize=fontsize,
-            )
 
         ax.invert_yaxis()  # 翻转y轴，最上方显示排名靠前的序列
 

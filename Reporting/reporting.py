@@ -201,7 +201,6 @@ class Clientfile(pd.DataFrame):
         potential = self.get_avg(values="月累计相关病人数", index=index, filter=filter)
         potential_dist = self.get_dist(index=index, columns="潜力级别", perc=True, filter=filter)
         df = pd.concat([client_number, potential, potential_dist], axis=1)
-        print(df)
         df.columns = ["客户档案数", "平均潜力", "H档案比例", "M档案比例", "L档案比例"]
         df["H+M档案比例"] = df["H档案比例"] + df["M档案比例"]
         df = df[["客户档案数", "平均潜力", "H档案比例", "M档案比例", "H+M档案比例"]]
@@ -270,10 +269,12 @@ class Clientfile(pd.DataFrame):
             y1labelfmt = format_abs
             title = "%s各%s分%s%s%s" % (self.name, index, columns, values, text_diff)
 
+        img_path = self.savepath + title + ".png"
+
         plot_barline(
             df_bar=df_bar,
             df_line=df_line,
-            savefile=self.savepath + title + ".png",
+            savefile=img_path,
             title=title,
             y1fmt=y1fmt,
             y1labelfmt=y1labelfmt,
@@ -283,6 +284,7 @@ class Clientfile(pd.DataFrame):
             height=height,
         )
 
+        return img_path
     # 分类指标分布情况绘图，分左右2个图，分别为绝对值堆积柱状图和百分百（份额）堆积柱状图
     def plot_twinbar_dist(self):
         pass
@@ -328,9 +330,11 @@ class Clientfile(pd.DataFrame):
         else:
             df_pre = None
 
+        img_path = self.savepath + title + ".png"
+
         plot_hist(
             df=df,
-            savefile=self.savepath + title + ".png",
+            savefile=img_path,
             show_kde=show_kde,
             show_tiles=show_tiles,
             show_metrics=show_metrics,
@@ -344,6 +348,8 @@ class Clientfile(pd.DataFrame):
             height=height,
             df_pre=df_pre,
         )
+
+        return img_path
 
     # 绘制份额饼图
     def plot_pie_share(self, index, values=None, filter=None, focus=None, series_limit=10, sort_values=True):
@@ -460,9 +466,11 @@ class Clientfile(pd.DataFrame):
         else:
             fontsize = 16
 
+        img_path = self.savepath + title + ".png"
+
         plot_grid_barh(
             df=df,
-            savefile=self.savepath + title + ".png",
+            savefile=img_path,
             formats=formats,
             title=title,
             vline_value=mean_value,
@@ -473,6 +481,7 @@ class Clientfile(pd.DataFrame):
             formats_diff=formats_diff,
         )
 
+        return img_path
     # 绘制覆盖/潜力散点图
     def plot_bubble_number_potential(
         self,
@@ -507,8 +516,10 @@ class Clientfile(pd.DataFrame):
         xtitle = col
         ytitle = "客户平均潜力（月累计相关病人数）"
 
+        img_path = self.savepath + title + ".png"
+
         plot_bubble(
-            savefile=self.savepath + title + ".png",
+            savefile=img_path,
             width=width,
             height=height,
             x=x,
@@ -533,6 +544,8 @@ class Clientfile(pd.DataFrame):
             ylabel=ylabel,
         )
 
+        return img_path
+
     # 绘制医院潜力和客户档案潜力散点图
     def plot_bubble_potential_pair(
         self, filter=None, z_scale=1.00, xlim=None, ylim=None, showLabel=False, labelLimit=30, width=15, height=6,
@@ -547,8 +560,10 @@ class Clientfile(pd.DataFrame):
         xtitle = "IQVIA医院潜力（取对数）"
         ytitle = "客户档案医院潜力（取对数）"
 
+        img_path = self.savepath + title + ".png"
+
         plot_bubble(
-            savefile=self.savepath + title + ".png",
+            savefile=img_path,
             width=width,
             height=height,
             x=x,
@@ -567,6 +582,7 @@ class Clientfile(pd.DataFrame):
             labelLimit=labelLimit,
         )
 
+        return img_path
 
 def cleandata(df):
     df.rename(columns={"所在科室": "科室", "医院全称": "医院", "省/自治区/直辖市": "省份"}, inplace=True)
@@ -630,18 +646,18 @@ if __name__ == "__main__":
     # )
     # P5
     # 各医院客户档案覆盖数量分布
-    # post.plot_hist_dist(
-    #     pivoted=True,
-    #     index="医院",
-    #     bins=50,
-    #     show_kde=True,
-    #     show_tiles=False,
-    #     show_metrics=True,
-    #     xlim=[0, 200],
-    #     width=6,
-    #     height=8,
-    #     pre=pre,
-    # )
+    post.plot_hist_dist(
+        pivoted=True,
+        index="医院",
+        bins=50,
+        show_kde=True,
+        show_tiles=False,
+        show_metrics=True,
+        xlim=[0, 200],
+        width=6,
+        height=8,
+        pre=pre,
+    )
 
     # # 各地区经理客户档案上传数量分布
     # post.plot_hist_dist(
@@ -709,9 +725,11 @@ if __name__ == "__main__":
     #
     # c.plot_hist_dist(pivoted=False, show_kde=True, show_tiles=True, bins=100, tiles=10)  # P25 档案数量十分位分布
     # c.plot_hist_dist(pivoted=False, show_kde=True, show_tiles=True, bins=100, tiles=3)  # P26 档案数量三分位分布
-    # # P2
-    # c.plot_pie_share(index="潜力级别")  # 潜力饼图
-    # c.plot_pie_share(index="潜力级别", values="月累计相关病人数")  # 潜力饼图
+    # # P27
+    total.plot_barline_dist(index="月份", columns="潜力级别", values=None, perc=True, format_perc="{:.1%}", width=6, height=6)
+
+    # post.plot_pie_share(index="潜力级别")  # 潜力饼图
+    # post.plot_pie_share(index="潜力级别", values="月累计相关病人数")  # 潜力饼图
     #
     # c.plot_barh_kpi(index="医院层级", dimension="potential")  # P28 分医院层级档案潜力相关指标汇总
     # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="potential") # P29 分IQVIA医院潜力分位档案潜力相关指标汇总
@@ -725,9 +743,9 @@ if __name__ == "__main__":
     # c.plot_barh_kpi(index="医院", dimension="potential", filter={"IQVIA医院潜力分位": ["D9"]}, width=15, heigh=8)
 
     # P34-36 分地区经理层级档案潜力相关指标汇总
-    # post.plot_barh_kpi(index="地区经理", dimension="potential", range=[0, 19], fontsize=12, mean_vline=True)
-    # post.plot_barh_kpi(index="地区经理", dimension="potential", range=[19, 38], fontsize=12, mean_vline=True)
-    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[38, 57], fontsize=12, mean_vline=True)
+    # post.plot_barh_kpi(index="地区经理", dimension="potential", range=[0, 17], fontsize=12, mean_vline=True)
+    # post.plot_barh_kpi(index="地区经理", dimension="potential", range=[17, 34], fontsize=12, mean_vline=True)
+    # c.plot_barh_kpi(index="地区经理", dimension="potential", range=[34, 51], fontsize=12, mean_vline=True)
 
     # P38-39 数量 versus 潜力 交叉分析
     # c.plot_bubble_number_potential("大区", z_scale=0.02, labelLimit=100)
