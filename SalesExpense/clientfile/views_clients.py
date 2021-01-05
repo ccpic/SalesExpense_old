@@ -685,6 +685,10 @@ def import_record(df):
     Client.objects.filter(dsm__in=df["地区经理"].unique()).delete()  # 删除当前DSM名下的记录
 
     max_pub_id_entry = Client.objects.max_pub_id()  # 当前最大（晚更新）的pub_id
+    if max_pub_id_entry is None:
+        pub_id = 0
+    else:
+        pub_id = max_pub_id_entry + 1
 
     for index, row in df.iterrows():
         client = Client.objects.update_or_create(
@@ -706,7 +710,7 @@ def import_record(df):
             patients_half_day=row[COL[15]],
             target_prop=row[COL[16]],
             note=row[COL[17]],
-            pub_id=max_pub_id_entry + 1,
+            pub_id=pub_id,
         )
 
 
