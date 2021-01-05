@@ -43,7 +43,7 @@ from Reporting.chart_func import *
 D_SORTER = {
     "潜力级别": ["H", "M", "L"],
     "科室": ["心内科", "肾内科", "老干科", "神内科", "内分泌科", "其他科室", "社区医院"],
-    "医院层级": ["A", "B", "C", "D", "旗舰社区", "普通社区"],
+    "医院级别": ["A", "B", "C", "D", "旗舰社区", "普通社区"],
     "职称": ["院长/副院长", "主任医师", "副主任医师", "主治医师", "住院医师", "其他"],
     "IQVIA医院潜力分位": ["D" + str(i + 1) for i in range(9, -1, -1)],
     "月份": [202011, 202012],
@@ -587,7 +587,7 @@ class Clientfile(pd.DataFrame):
 def cleandata(df):
     df.rename(columns={"所在科室": "科室", "医院全称": "医院", "省/自治区/直辖市": "省份"}, inplace=True)
     df["地区经理"] = df["地区经理"] + "(" + df["大区"] + ")"
-    mask = df["医院层级"].isin(["旗舰社区", "普通社区"])
+    mask = df["医院级别"].isin(["旗舰社区", "普通社区"])
     df.loc[mask, "科室"] = "社区医院"
     mask = df["职称"].isin(["院长", "副院长"])
     df.loc[mask, "职称"] = "院长/副院长"
@@ -689,18 +689,18 @@ if __name__ == "__main__":
 
     # P6
     # # 客户档案基本分布情况
-    # total.plot_barline_dist(index="月份", columns="医院层级", values=None, perc=True, format_perc="{:.1%}", width=2, height=6)
+    # total.plot_barline_dist(index="月份", columns="医院级别", values=None, perc=True, format_perc="{:.1%}", width=2, height=6)
     # total.plot_barline_dist(index="月份", columns="科室", values=None, perc=True, format_perc="{:.1%}", width=2, height=6)
     # total.plot_barline_dist(index="月份", columns="职称", values=None, perc=True, format_perc="{:.1%}", width=2, height=6)
     # P6备用
-    # pre.plot_pie_share(index="医院层级")  # 对比周期医院层级份额饼图
+    # pre.plot_pie_share(index="医院级别")  # 对比周期医院级别份额饼图
     # pre.plot_pie_share(index="科室", focus="社区医院")  # 对比周期科室份额饼图
     # pre.plot_pie_share(index="职称")  # 对比周期职称份额饼图
-    # post.plot_pie_share(index="医院层级")  # 当前周期医院层级份额饼图
+    # post.plot_pie_share(index="医院级别")  # 当前周期医院级别份额饼图
     # post.plot_pie_share(index="科室", focus="社区医院")  # 当前周期科室份额饼图
     # post.plot_pie_share(index="职称")  # 当前周期职称份额饼图
     #
-    # post.plot_barh_kpi(index="医院层级", dimension="number", pre=pre)  # P7分医院层级档案数量相关指标汇总
+    # post.plot_barh_kpi(index="医院级别", dimension="number", pre=pre)  # P7分医院级别档案数量相关指标汇总
     # post.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="number", pre=pre) # P8分IQVIA医院潜力分位档案数量相关指标汇总
     # post.plot_barh_kpi(index="科室", dimension="number", pre=pre) # P9分科室档案数量相关指标汇总
     # post.plot_barh_kpi(index="职称", dimension="number", pre=pre) # P10分职称档案数量相关指标汇总
@@ -709,9 +709,9 @@ if __name__ == "__main__":
     # post.plot_barh_kpi(index="大区", dimension="number", mean_vline=True, pre=pre) # P12分大区档案数量相关指标汇总
 
     # P13-20
-    # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False)
-    # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=False, pre=pre)
-    # post.plot_barline_dist(index="大区", columns="医院层级", values=None, perc=True)
+    # post.plot_barline_dist(index="大区", columns="医院级别", values=None, perc=False)
+    # post.plot_barline_dist(index="大区", columns="医院级别", values=None, perc=False, pre=pre)
+    # post.plot_barline_dist(index="大区", columns="医院级别", values=None, perc=True)
     # c.plot_barline_dist(index="大区", columns="IQVIA医院潜力分位", values=None, perc=False)
     # c.plot_barline_dist(index="大区", columns="IQVIA医院潜力分位", values=None, perc=True)
     # c.plot_barline_dist(index="大区", columns="科室", values=None, perc=False)
@@ -731,7 +731,7 @@ if __name__ == "__main__":
     # post.plot_pie_share(index="潜力级别")  # 潜力饼图
     # post.plot_pie_share(index="潜力级别", values="月累计相关病人数")  # 潜力饼图
     #
-    # c.plot_barh_kpi(index="医院层级", dimension="potential")  # P28 分医院层级档案潜力相关指标汇总
+    # c.plot_barh_kpi(index="医院级别", dimension="potential")  # P28 分医院级别档案潜力相关指标汇总
     # c.plot_barh_kpi(index="IQVIA医院潜力分位", dimension="potential") # P29 分IQVIA医院潜力分位档案潜力相关指标汇总
     # c.plot_barh_kpi(index="科室", dimension="potential") # P30 分科室档案潜力相关指标汇总
     # c.plot_barh_kpi(index="职称", dimension="potential") # P31 分职称层级档案潜力相关指标汇总
@@ -752,5 +752,5 @@ if __name__ == "__main__":
     # post.plot_bubble_number_potential("地区经理", z_scale=0.05, labelLimit=100, dimension="rsp")
     # c.plot_bubble_number_potential("IQVIA医院潜力分位", z_scale=0.02, labelLimit=100)
 
-    # post.plot_barh_kpi(index="大区", dimension="number_by_group", columns="医院层级", mean_vline=True)
-    # post.plot_barh_kpi(index="地区经理", dimension="potential_by_group", columns="医院层级", mean_vline=True, range=[0, 19], fontsize=12)
+    # post.plot_barh_kpi(index="大区", dimension="number_by_group", columns="医院级别", mean_vline=True)
+    # post.plot_barh_kpi(index="地区经理", dimension="potential_by_group", columns="医院级别", mean_vline=True, range=[0, 19], fontsize=12)

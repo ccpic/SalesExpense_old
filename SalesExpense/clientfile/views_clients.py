@@ -46,11 +46,11 @@ D_SEARCH_FIELD = {
     "地区经理": "dsm",
     "负责代表": "rsp",
     "医院全称": "hospital",
-    "医院层级": "hp_level",
+    "医院级别": "hp_level",
     "客户姓名": "name",
     "所在科室": "dept",
     "职称": "title",
-    "备注": "note",
+    #"备注": "note",
 }
 
 D_SELECT = {
@@ -63,7 +63,7 @@ D_SELECT = {
     "医院编码": "xltid-select[]",
     "医院全称": "hosp-select[]",
     "是否双call": "dc-select[]",
-    "医院层级": "hplevel-select[]",
+    "医院级别": "hplevel-select[]",
     "是否开户": "hpaccess-select[]",
     "所在科室": "dept-select[]",
     "职称": "title-select[]",
@@ -79,7 +79,7 @@ D_FIELD = {
     "医院编码": "xlt_id",
     "医院全称": "hospital",
     "是否双call": "dual_call",
-    "医院层级": "hp_level",
+    "医院级别": "hp_level",
     "是否开户": "hp_access",
     "所在科室": "dept",
     "职称": "title",
@@ -138,7 +138,7 @@ COL_REINDEX = [
     "医院全称",
     "省/自治区/直辖市",
     "是否双call",
-    "医院层级",
+    "医院级别",
     "是否开户",
     "客户姓名",
     "所在科室",
@@ -479,6 +479,8 @@ def validate(df):
     d_error = {**d_error, **check_inconsist(df, "医院全称", "是否双call", "left")}
     d_error = {**d_error, **check_inconsist(df, "医院全称", "医院级别", "left")}
     d_error = {**d_error, **check_inconsist(df, "医院全称", "开户进展", "left")}
+
+    d_error = {**d_error, **check_hplevel_with_dept(df)} # 检查医院级别和所在科室是否出现矛盾
     return d_error
 
 
@@ -504,6 +506,17 @@ def check_inconsist(df, col1, col2, side="left"):
             d_error["相同" + col2 + "有不同" + col1] = pivot[pivot.duplicated(col2, keep=False)].to_html(
                 index=False, classes="ui red small table"
             )
+    return d_error
+
+
+def check_hplevel_with_dept(df):
+    d_error = {}
+    pivot = df.groupby(['医院级别', '所在科室']).size().reset_index().rename(columns={0: "记录数"})
+    mask = (pivot['医院级别'].str.count('社区') + pivot['所在科室'].str.count('社区')) == 1
+    if len(pivot.loc[mask, :]) > 0:
+        d_error["医院级别和所在科室出现矛盾"] = pivot.loc[mask, :].to_html(
+            index=False, classes="ui red small table")
+
     return d_error
 
 

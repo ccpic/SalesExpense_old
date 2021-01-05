@@ -49,7 +49,7 @@ def add_img_slide(title=None, layout_style=0, *args):
 
 # 准备数据
 df_pre = pd.read_excel("20201130095848.xlsx")  # 作为对比的上个时期的档案数据
-df_post = pd.read_excel("20201215134151.xlsx")  # 作为对比的上个时期的档案数据
+df_post = pd.read_excel("20210104134437.xlsx")  # 作为对比的上个时期的档案数据
 df_decile = pd.read_excel("decile.xlsx")  # 医院Decile数据文件，用于Decile相关分析的匹配
 
 df_pre["月份"] = 202011
@@ -59,14 +59,14 @@ df_total = pd.merge(df_total, df_decile.loc[:, ["医院编码", "IQVIA医院潜�
 df_total = cleandata(df_total)
 
 # 分南北中国
-bu = "南中国"
+bu = "北中国"
 df_pre = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202011)]
 df_post = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202012)]
 df_total = df_total[df_total["南北中国"] == bu]
 
-pre = Clientfile(df_pre, name="南中国11月")
-post = Clientfile(df_post, name="南中国12月")
-total = Clientfile(df_total, name="南中国")
+pre = Clientfile(df_pre, name=bu+"11月")
+post = Clientfile(df_post, name=bu+"12月")
+total = Clientfile(df_total, name=bu)
 
 print("Data Ready")
 
@@ -220,7 +220,7 @@ add_img_slide(
     0,
     {
         "img": total.plot_barline_dist(
-            index="月份", columns="医院层级", values=None, perc=True, format_perc="{:.1%}", width=2, height=6
+            index="月份", columns="医院级别", values=None, perc=True, format_perc="{:.1%}", width=2, height=6
         ),
         "top": top,
         "left": Inches(0.2),
@@ -245,7 +245,7 @@ add_img_slide(
 )
 
 # Page7-12 档案数量相关指标汇总
-index_list = ["医院层级", "IQVIA医院潜力分位", "科室", "职称", "区域", "大区"]
+index_list = ["医院级别", "科室", "职称", "区域", "大区"]
 for idx in index_list:
     add_img_slide(
         "分%s档案数量相关指标汇总" % idx,
@@ -259,7 +259,7 @@ for idx in index_list:
     )
 
 # Page13-24 各大区多种维度级档案数分布
-columns_list = ["医院层级", "IQVIA医院潜力分位", "科室", "职称"]
+columns_list = ["医院级别", "科室", "职称"]
 for col in columns_list:
     add_img_slide(
         "各大区分%s档案数" % col,
@@ -347,7 +347,7 @@ add_img_slide(
 )
 
 # Page31-36 档案潜力相关指标汇总
-index_list = ["医院层级", "IQVIA医院潜力分位", "科室", "职称", "区域", "大区"]
+index_list = ["医院级别", "IQVIA医院潜力分位", "科室", "职称", "区域", "大区"]
 for idx in index_list:
     add_img_slide(
         "分%s档案潜力相关指标汇总" % idx,
