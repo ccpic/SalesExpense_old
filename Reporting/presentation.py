@@ -48,24 +48,24 @@ def add_img_slide(title=None, layout_style=0, *args):
 
 
 # 准备数据
-df_pre = pd.read_excel("20201130095848.xlsx")  # 作为对比的上个时期的档案数据
-df_post = pd.read_excel("20210104134437.xlsx")  # 作为对比的上个时期的档案数据
-df_decile = pd.read_excel("decile.xlsx")  # 医院Decile数据文件，用于Decile相关分析的匹配
+df_pre = pd.read_excel("20210104134437.xlsx")  # 作为对比的上个时期的档案数据
+df_post = pd.read_excel("20210201155734.xlsx")  # 作为对比的上个时期的档案数据
+# df_decile = pd.read_excel("decile.xlsx")  # 医院Decile数据文件，用于Decile相关分析的匹配
 
-df_pre["月份"] = 202011
-df_post["月份"] = 202012
+df_pre["月份"] = 202012
+df_post["月份"] = 202101
 df_total = pd.concat([df_pre, df_post])
-df_total = pd.merge(df_total, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
+# df_total = pd.merge(df_total, df_decile.loc[:, ["医院编码", "IQVIA医院潜力", "IQVIA医院潜力分位"]], how="left", on="医院编码")
 df_total = cleandata(df_total)
 
 # 分南北中国
-bu = "北中国"
-df_pre = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202011)]
-df_post = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202012)]
+bu = "南中国"
+df_pre = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202012)]
+df_post = df_total[(df_total["南北中国"] == bu) & (df_total["月份"] == 202101)]
 df_total = df_total[df_total["南北中国"] == bu]
 
-pre = Clientfile(df_pre, name=bu+"11月")
-post = Clientfile(df_post, name=bu+"12月")
+pre = Clientfile(df_pre, name=bu+"12月")
+post = Clientfile(df_post, name=bu+"1月")
 total = Clientfile(df_total, name=bu)
 
 print("Data Ready")
@@ -215,34 +215,58 @@ add_img_slide(
 )
 
 # Page6 客户档案基本分布情况
+top = Inches(1.7)
+height = Inches(3.9)
 add_img_slide(
     "客户档案单位覆盖情况",
     0,
     {
-        "img": total.plot_barline_dist(
-            index="月份", columns="医院级别", values=None, perc=True, format_perc="{:.1%}", width=2, height=6
-        ),
+        "img": post.plot_pie_share(index="医院级别", series_limit=25),
         "top": top,
         "left": Inches(0.2),
         "height": height,
     },
     {
-        "img": total.plot_barline_dist(
-            index="月份", columns="科室", values=None, perc=True, format_perc="{:.1%}", width=2, height=6
-        ),
+        "img": post.plot_pie_share(index="科室"),
         "top": top,
-        "left": Inches(4.7),
+        "left": Inches(4),
         "height": height,
     },
     {
-        "img": total.plot_barline_dist(
-            index="月份", columns="职称", values=None, perc=True, format_perc="{:.1%}", width=2, height=6
-        ),
+        "img": post.plot_pie_share(index="职称"),
         "top": top,
-        "left": Inches(8.8),
+        "left": Inches(8),
         "height": height,
     },
 )
+# add_img_slide(
+#     "客户档案单位覆盖情况",
+#     0,
+#     {
+#         "img": total.plot_barline_dist(
+#             index="月份", columns="医院级别", values=None, perc=True, format_perc="{:.1%}", width=2, height=6
+#         ),
+#         "top": top,
+#         "left": Inches(0.2),
+#         "height": height,
+#     },
+#     {
+#         "img": total.plot_barline_dist(
+#             index="月份", columns="科室", values=None, perc=True, format_perc="{:.1%}", width=2, height=6
+#         ),
+#         "top": top,
+#         "left": Inches(4.7),
+#         "height": height,
+#     },
+#     {
+#         "img": total.plot_barline_dist(
+#             index="月份", columns="职称", values=None, perc=True, format_perc="{:.1%}", width=2, height=6
+#         ),
+#         "top": top,
+#         "left": Inches(8.8),
+#         "height": height,
+#     },
+# )
 
 # Page7-12 档案数量相关指标汇总
 index_list = ["医院级别", "科室", "职称", "区域", "大区"]
@@ -251,7 +275,7 @@ for idx in index_list:
         "分%s档案数量相关指标汇总" % idx,
         0,
         {
-            "img": post.plot_barh_kpi(index=idx, dimension="number", pre=pre),
+            "img": post.plot_barh_kpi(index=idx, dimension="number"),
             "top": TOP,
             "left": LEFT_ONE_IMAGE,
             "width": WIDTH_ONE_IMAGE
@@ -281,16 +305,16 @@ for col in columns_list:
             "width": WIDTH_ONE_IMAGE
         },
     )
-    add_img_slide(
-        "各大区分%s档案数变化" % col,
-        0,
-        {
-            "img": post.plot_barline_dist(index="大区", columns=col, values=None, perc=False, pre=pre),
-            "top": TOP,
-            "left": LEFT_ONE_IMAGE,
-            "width": WIDTH_ONE_IMAGE
-        },
-    )
+    # add_img_slide(
+    #     "各大区分%s档案数变化" % col,
+    #     0,
+    #     {
+    #         "img": post.plot_barline_dist(index="大区", columns=col, values=None, perc=False),
+    #         "top": TOP,
+    #         "left": LEFT_ONE_IMAGE,
+    #         "width": WIDTH_ONE_IMAGE
+    #     },
+    # )
 
 # Page25-27 各地区经理档案数量相关指标汇总
 range_list = ((0, 17), (17, 34), (34, 51))
@@ -300,7 +324,7 @@ for i, r in enumerate(range_list):
         0,
         {
             "img": post.plot_barh_kpi(
-                index="地区经理", dimension="number", range=[r[0], r[1]], fontsize=12, mean_vline=True, pre=pre
+                index="地区经理", dimension="number", range=[r[0], r[1]], fontsize=12, mean_vline=True
             ),
             "top": TOP,
             "left": LEFT_ONE_IMAGE,
@@ -324,7 +348,7 @@ add_img_slide(
 )
 
 # Page30 潜力饼图
-height = Inches(6)
+height = Inches(5)
 add_img_slide(
     "分潜力级别档案数量及病人数份额",
     0,
@@ -347,7 +371,7 @@ add_img_slide(
 )
 
 # Page31-36 档案潜力相关指标汇总
-index_list = ["医院级别", "IQVIA医院潜力分位", "科室", "职称", "区域", "大区"]
+index_list = ["医院级别", "科室", "职称", "区域", "大区"]
 for idx in index_list:
     add_img_slide(
         "分%s档案潜力相关指标汇总" % idx,

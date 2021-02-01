@@ -42,11 +42,11 @@ from Reporting.chart_func import *
 
 D_SORTER = {
     "潜力级别": ["H", "M", "L"],
-    "科室": ["心内科", "肾内科", "老干科", "神内科", "内分泌科", "其他科室", "社区医院"],
-    "医院级别": ["A", "B", "C", "D", "旗舰社区", "普通社区"],
+    "科室": ["心内科", "肾内科", "普内科", "老干科", "神内科", "内分泌科", "其他科室", "社区-全科", "社区-其他"],
+    "医院级别": ["D" + str(i + 1) for i in range(9, -1, -1)]+["旗舰社区", "普通社区"],
     "职称": ["院长/副院长", "主任医师", "副主任医师", "主治医师", "住院医师", "其他"],
     "IQVIA医院潜力分位": ["D" + str(i + 1) for i in range(9, -1, -1)],
-    "月份": [202011, 202012],
+    "月份": [202012, 202101],
 }
 
 D_RENAME = {
@@ -129,7 +129,10 @@ class Clientfile(pd.DataFrame):
             pivoted = pivoted.loc[s.index, :]  # 行按照汇总总和大小排序
 
         if columns in D_SORTER:
-            pivoted = pivoted[D_SORTER[columns]]  # # 对于部分变量有固定列排序
+            try:
+                pivoted = pivoted[D_SORTER[columns]]  # # 对于部分变量有固定列排序
+            except KeyError:
+                pass
 
         if index in D_SORTER:
             pivoted = pivoted.reindex(D_SORTER[index])  # 对于部分变量有固定排序
@@ -184,14 +187,15 @@ class Clientfile(pd.DataFrame):
         hosp_number = self.get_unique_count(values="医院", index=index, filter=filter)
         rsp_number = self.get_unique_count(values="负责代表", index=index, filter=filter)
         df = pd.concat([client_number, hosp_number, rsp_number], axis=1)
-        df.columns = ["客户档案数", "覆盖医院数", "代表人数"]
-        df["平均档案数/每家医院"] = df["客户档案数"] / df["覆盖医院数"]
-        df["平均档案数/每位代表"] = df["客户档案数"] / df["代表人数"]
-        df = df[["客户档案数", "覆盖医院数", "平均档案数/每家医院", "代表人数", "平均档案数/每位代表"]]
-        if sort_values is True:
-            df.sort_values(by="客户档案数", axis=0, ascending=False, inplace=True)
-        if index in D_SORTER:
-            df = df.reindex(D_SORTER[index])  # # 对于部分变量有固定列排序
+        if df.empty is False:
+            df.columns = ["客户档案数", "覆盖医院数", "代表人数"]
+            df["平均档案数/每家医院"] = df["客户档案数"] / df["覆盖医院数"]
+            df["平均档案数/每位代表"] = df["客户档案数"] / df["代表人数"]
+            df = df[["客户档案数", "覆盖医院数", "平均档案数/每家医院", "代表人数", "平均档案数/每位代表"]]
+            if sort_values is True:
+                df.sort_values(by="客户档案数", axis=0, ascending=False, inplace=True)
+            if index in D_SORTER:
+                df = df.reindex(D_SORTER[index])  # # 对于部分变量有固定列排序
 
         return df
 
@@ -227,6 +231,7 @@ class Clientfile(pd.DataFrame):
         **kwargs
     ):
         df_bar = self.get_dist(index=index, columns=columns, values=values, perc=perc, filter=filter)
+        print(df_bar)
         text_diff = ""
         if pre is not None:
             idx = df_bar.index
@@ -378,13 +383,18 @@ class Clientfile(pd.DataFrame):
         if values is None:
             values = "档案数"  # 如果透视没设置values，题目为档案数，否则为values
         title = "%s分%s\n%s份额" % (self.name, index, values)
+
+        img_path = self.savepath + "%s分%s%s份额" % (self.name, index, values) + ".png"
+
         plot_pie(
-            savefile=self.savepath + "%s分%s%s份额" % (self.name, index, values) + ".png",
+            savefile=img_path,
             sizelist=df2,
             labellist=df2.index,
             focus=focus,
             title=title,
         )
+
+        return img_path
 
     # 绘制KPI综合展示图，以多个指标的横条型图同时展示为主
     def plot_barh_kpi(
@@ -397,6 +407,7 @@ class Clientfile(pd.DataFrame):
                 formats_diff = ["{:+,.0f}", "{:+,.0f}", "{:+,.0f}", "{:+,.0f}", "{:+,.0f}"]
             else:
                 df_pre = None
+                formats_diff = None
             formats = ["{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}", "{:,.0f}"]
             title = "%s分%s档案数量相关综合情况" % (self.name, index)
         elif dimension == "potential":
@@ -587,8 +598,8 @@ class Clientfile(pd.DataFrame):
 def cleandata(df):
     df.rename(columns={"所在科室": "科室", "医院全称": "医院", "省/自治区/直辖市": "省份"}, inplace=True)
     df["地区经理"] = df["地区经理"] + "(" + df["大区"] + ")"
-    mask = df["医院级别"].isin(["旗舰社区", "普通社区"])
-    df.loc[mask, "科室"] = "社区医院"
+    # mask = df["医院级别"].isin(["旗舰社区", "普通社区"])
+    # df.loc[mask, "科室"] = "社区医院"
     mask = df["职称"].isin(["院长", "副院长"])
     df.loc[mask, "职称"] = "院长/副院长"
 

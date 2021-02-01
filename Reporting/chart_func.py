@@ -135,7 +135,7 @@ def plot_grid_barh(
     for i in range(df.shape[1]):
         ax = plt.subplot(gs[i])
         df_bar = df.iloc[:, i]
-        if df_pre is not None:
+        if df_pre is not None and df_pre.empty is False:
             df_diff = df_bar - df_pre.iloc[:, i]
 
         ax = df_bar.plot(kind="barh", alpha=0.8, color=COLOR_LIST[i], edgecolor="black", zorder=3)
@@ -166,7 +166,7 @@ def plot_grid_barh(
             # 添加绝对值数字标签
             ax.text(pos_x, j, formats[i].format(v), ha=ha, va="center", color=fontcolor, fontsize=fontsize)
             # 添加和pre差值数字标签
-            if df_pre is not None:
+            if df_pre is not None and df_pre.empty is False:
                 idx = df_bar.index[j]
                 v_diff = df_diff.loc[idx]
 
@@ -579,7 +579,7 @@ def plot_pie(savefile, sizelist, labellist, focus, title):
 
     # Combine circle part and pie part
     fig = plt.gcf()
-    fig.set_size_inches(6, 6)
+    fig.set_size_inches(5, 5)
     fig.gca().add_artist(my_circle)
 
     # Save the figure
