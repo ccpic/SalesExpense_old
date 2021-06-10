@@ -1,4 +1,4 @@
-Django==2.2
+Django==2.2.24
 django-el-pagination==3.3.0
 django-js-asset==1.2.2
 django-mptt==0.11.0
